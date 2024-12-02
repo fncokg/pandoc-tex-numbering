@@ -18,6 +18,8 @@ def prepare(doc):
     doc.pandoc_tex_numbering["ref_dict"] = {}
     doc.pandoc_tex_numbering["current_chp"] = 0
     doc.pandoc_tex_numbering["current_eq"] = 0
+    doc.pandoc_tex_numbering["current_fig"] = 0
+    doc.pandoc_tex_numbering["current_tab"] = 0
     doc.pandoc_tex_numbering["multiline_envs"] = ["cases","align","aligned","alignedat","eqnarray","gather","gathered","multline","split"]
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
         r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")\}"
@@ -26,47 +28,18 @@ def prepare(doc):
 def finalize(doc):
     del doc.pandoc_tex_numbering
 
-def _current_numbering(doc):
+def _current_numbering(doc,item="eq"):
     chp = doc.pandoc_tex_numbering["current_chp"]
-    eq = doc.pandoc_tex_numbering["current_eq"]
+    eq = doc.pandoc_tex_numbering[f"current_{item}"]
     return f"{chp}.{eq}"
 
-def action_find_ref_dict(elem, doc):
-    if isinstance(elem, Link) and 'reference-type' in elem.attributes and elem.attributes['reference-type'] == 'ref':
-        numbering = elem.content[0].text
-        # Exclude equation numbering not processed
-        if not numbering.startswith("["):
-            doc.pandoc_tex_numbering["ref_dict"][elem.attributes['reference']] = elem.content[0].text
-
-def add_label_to_caption(doc,label:str,caption_plain:Plain,prefix_str:str):
-    if label in doc.pandoc_tex_numbering["ref_dict"]:
-        label_items = [
-            Str(prefix_str),
-            Link(Str(doc.pandoc_tex_numbering["ref_dict"][label]), url=f"#{label}"),
-            Str(":"),
-            Space()
-        ]
-        for item in label_items[::-1]:
-            caption_plain.content.insert(0, item)
-
-def action_do_fig_caption(elem, doc):
-    if isinstance(elem, Figure) and len(elem.caption.content) > 0:
-        caption_plain: Plain = elem.caption.content[0]
-        label = elem.identifier
-        add_label_to_caption(doc,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"])
-
-def action_do_table_caption(elem, doc):
-    if isinstance(elem, Table) and len(elem.caption.content) > 0:
-        caption_plain: Plain = elem.caption.content[0]
-        label = elem.parent.identifier
-        add_label_to_caption(doc,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"])
 
 def _parse_multiline_environment(root_node,doc):
     labels = {}
     environment_body = ""
     # Multiple equations
     doc.pandoc_tex_numbering["current_eq"] += 1
-    current_numbering = _current_numbering(doc)
+    current_numbering = _current_numbering(doc,"eq")
     for node in root_node.nodelist:
         if isinstance(node,LatexMacroNode):
             if node.macroname == "label":
@@ -76,7 +49,7 @@ def _parse_multiline_environment(root_node,doc):
             if node.macroname == "\\":
                 environment_body += f"\\qquad{{({current_numbering})}}"
                 doc.pandoc_tex_numbering["current_eq"] += 1
-                current_numbering = _current_numbering(doc)
+                current_numbering = _current_numbering(doc,"eq")
         environment_body += node.latex_verbatim()
     environment_body += f"\\qquad{{({current_numbering})}}"
     modified_math_str = f"\\begin{{{root_node.environmentname}}}{environment_body}\\end{{{root_node.environmentname}}}"
@@ -85,7 +58,7 @@ def _parse_multiline_environment(root_node,doc):
 def _parse_plain_math(math_str:str,doc):
     labels = {}
     doc.pandoc_tex_numbering["current_eq"] += 1
-    current_numbering = _current_numbering(doc)
+    current_numbering = _current_numbering(doc,"eq")
     modified_math_str = f"{math_str}\\qquad{{({current_numbering})}}"
     label_strings = re.findall(r"\\label\{(.*?)\}",math_str)
     if len(label_strings) >= 2:
@@ -113,7 +86,18 @@ def parse_latex_math(math_str:str,doc):
     return _parse_plain_math(math_str,doc)
 
 
-def action_eq_numbering(elem, doc):
+def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str):
+    label_items = [
+        Str(prefix_str),
+        Link(Str(numbering), url=f"#{label}"),
+        Str(":"),
+        Space()
+    ]
+    for item in label_items[::-1]:
+        caption_plain.content.insert(0, item)
+
+
+def action_find_labels(elem, doc):
     if isinstance(elem,Header) and elem.level == 1:
         doc.pandoc_tex_numbering["current_chp"] += 1
         doc.pandoc_tex_numbering["current_eq"] = 0
@@ -124,8 +108,23 @@ def action_eq_numbering(elem, doc):
         for label,numbering in labels.items():
             doc.pandoc_tex_numbering["ref_dict"][label] = numbering
             elem.parent.content.append(Span(identifier=f"#{label}"))
+    if isinstance(elem,Figure):
+        doc.pandoc_tex_numbering["current_fig"] += 1
+        label = elem.identifier
+        numbering = _current_numbering(doc,"fig")
+        doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+        caption_plain: Plain = elem.caption.content[0]
+        add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"])
+    if isinstance(elem,Table):
+        doc.pandoc_tex_numbering["current_tab"] += 1
+        label = elem.parent.identifier
+        numbering = _current_numbering(doc,"tab")
+        doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+        caption_plain: Plain = elem.caption.content[0]
+        add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"])
 
-def action_do_eq_ref(elem, doc):
+
+def action_replace_refs(elem, doc):
     if isinstance(elem, Link) and 'reference-type' in elem.attributes and elem.attributes['reference-type'] == 'ref':
         label = elem.attributes['reference']
         if label in doc.pandoc_tex_numbering["ref_dict"]:
@@ -134,8 +133,7 @@ def action_do_eq_ref(elem, doc):
             logger.warning(f"Reference not found: {label}")
 
 def main(doc=None):
-    return run_filters([action_eq_numbering ,action_find_ref_dict,action_do_fig_caption,action_do_table_caption,action_do_eq_ref], doc=doc,prepare=prepare, finalize=finalize)
-    # return run_filters([action], doc=doc,prepare=prepare, finalize=finalize)
+    return run_filters([action_find_labels ,action_replace_refs], doc=doc,prepare=prepare, finalize=finalize)
 
 if __name__ == '__main__':
     main()
