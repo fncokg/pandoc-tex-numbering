@@ -1,5 +1,9 @@
 # pandoc-tex-numbering
-With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any format pandoc supported, especially `.docx`, while **keep all your auto-numberings and cross references**. `pandoc-tex-numbering` even supports **multi-line environments** in LaTeX math block such as `align`, `cases` etc.
+This is an all-in-one pandoc filter especially for LaTeX files to keep **numbering, hyperlinks, caption prefixs and cross references in (maybe multi-line) equations, figures, and tables**.
+
+With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any format pandoc supported, especially `.docx`, while **keep all your auto-numberings and cross references**. 
+
+`pandoc-tex-numbering` even supports **multi-line environments** in LaTeX math block such as `align`, `cases` etc.
 
 # Installation
 
@@ -45,5 +49,5 @@ pandoc --filter pandoc-tex-numbering.py testing_data/test.tex -o testing_data/te
 
 The results are shown as follows:
 
-![alt text](https://github.com/fncokg/pandoc-tex-numbering/images/output-page1.jpg?raw=true)
-![alt text](https://github.com/fncokg/pandoc-tex-numbering/images/output-page2.jpg?raw=true)
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/output-page1.jpg?raw=true)
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/output-page2.jpg?raw=true)
