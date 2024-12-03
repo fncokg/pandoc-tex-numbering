@@ -28,6 +28,8 @@ pandoc --filter pandoc-tex-numbering.py input.tex -o output.docx
 
 All the figures and tables are supported. All references to figures and tables are replaced by their numbers, and all the captions are added prefixs such as "Figure 1.1: ".
 
+You can determine the prefix of figures and tables by changing the variables `figure_prefix` and `table_prefix` in the metadata, default values are "Figure" and "Table" respectively.
+
 ## Equations
 
 Single-line equations are auto-numbered. At the end of every equation, a label is added such as `(1.1)`.
@@ -38,6 +40,31 @@ Multi-line equations are:
 - numbered for the whole block if there's no `\label{}` command inside the environment.
 
 Therefore, if you want to reference a multi-line equation as a whole, you should put a `\label{}` command outside the environment. While if you want to reference a specific line, you should put a `\label{}` command at the corresponding line.
+
+For example, in the following code:
+    
+```latex
+\begin{equation}
+\begin{align}
+    a &= b \label{eq:1} \\
+    c &= d \label{eq:2}
+\end{align}
+\end{equation}
+```
+
+The filter will numbering the first line as (1.1) and the second line as (1.2). While in the following code:
+
+```latex
+\begin{equation}
+\begin{align}
+    a &= b \\
+    c &= d
+\end{align}
+\label{eq:1}
+\end{equation}
+```
+
+The filter will numbering the whole block as (1.1).
 
 # Examples
 
