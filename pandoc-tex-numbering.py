@@ -29,13 +29,14 @@ def prepare(doc):
 
 def finalize(doc):
     for para,labels in doc.pandoc_tex_numbering["paras2wrap"]:
-        parent = para.parent
-        idx = parent.content.index(para)
-        del parent.content[idx]
-        div = Div(para,identifier=labels[0])
-        for label in labels[1:]:
-            div = Div(div,identifier=label)
-        parent.content.insert(idx,div)
+        if labels:
+            parent = para.parent
+            idx = parent.content.index(para)
+            del parent.content[idx]
+            div = Div(para,identifier=labels[0])
+            for label in labels[1:]:
+                div = Div(div,identifier=label)
+            parent.content.insert(idx,div)
     del doc.pandoc_tex_numbering
 
 def _current_section(doc,level=1):
@@ -126,9 +127,8 @@ def action_find_labels(elem, doc):
         elem.text = modified_math_str
         for label,numbering in labels.items():
             doc.pandoc_tex_numbering["ref_dict"][label] = numbering
-            # elem.parent.content[0]=Span(elem,identifier=label)
-            # elem.parent.content.append(Span(identifier=label))
-        doc.pandoc_tex_numbering["paras2wrap"].append([elem.parent,list(labels.keys())])
+        if labels:
+            doc.pandoc_tex_numbering["paras2wrap"].append([elem.parent,list(labels.keys())])
     if isinstance(elem,Figure):
         doc.pandoc_tex_numbering["current_fig"] += 1
         label = elem.identifier
