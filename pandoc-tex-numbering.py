@@ -114,6 +114,8 @@ def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str)
 def action_find_labels(elem, doc):
     if isinstance(elem,Header):
         doc.pandoc_tex_numbering["current_sec"][elem.level-1] += 1
+        for i in range(elem.level,10):
+            doc.pandoc_tex_numbering["current_sec"][i] = 0
         if elem.level >= doc.pandoc_tex_numbering["eq_reset_level"]:
             doc.pandoc_tex_numbering["current_eq"] = 0
         for child in elem.content:
@@ -121,6 +123,7 @@ def action_find_labels(elem, doc):
                 label = child.attributes["label"]
                 numbering = _current_section(doc,level=elem.level)
                 doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+        
     if isinstance(elem,Math) and elem.format == "DisplayMath":
         math_str = elem.text
         modified_math_str,labels = parse_latex_math(math_str,doc)
@@ -128,7 +131,15 @@ def action_find_labels(elem, doc):
         for label,numbering in labels.items():
             doc.pandoc_tex_numbering["ref_dict"][label] = numbering
         if labels:
-            doc.pandoc_tex_numbering["paras2wrap"].append([elem.parent,list(labels.keys())])
+            this_elem = elem
+            while not isinstance(this_elem,Para):
+                this_elem = this_elem.parent
+                if isinstance(this_elem,Doc):
+                    logger.warning(f"Unexpected parent of math block: {this_elem}")
+                    break
+            else:
+                doc.pandoc_tex_numbering["paras2wrap"].append([this_elem,list(labels.keys())])
+                
     if isinstance(elem,Figure):
         doc.pandoc_tex_numbering["current_fig"] += 1
         label = elem.identifier
