@@ -88,3 +88,9 @@ The results are shown as follows:
 
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/output-page1.jpg?raw=true)
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/output-page2.jpg?raw=true)
+
+# Development
+
+If you want to modify the filter, you can modify the `pandoc-tex-numbering.py` directly. The filter is written in Python and based on `panflute`.
+
+The logical structure of the filter is quiet straightforward. It is recommended to decalre all your possible variables in the `prepare` function, and save them in the `doc.pandoc_tex_numbering:dict` object. This object will be automatically destroyed after the filter is executed.
