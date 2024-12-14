@@ -16,11 +16,21 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 
 # Usage
 
+## Quick Start
+
 Take `.docx` as an example:
 
 ```bash
 pandoc --filter pandoc-tex-numbering.py input.tex -o output.docx
 ```
+
+## Customization
+
+You can set the following variables in the metadata of your LaTeX file to customize the behavior of the filter:
+
+- `figure_prefix`: The prefix of the caption of figures. Default is "Figure".
+- `table_prefix`: The prefix of the caption of tables. Default is "Table".
+- `equation-reset-level`: The level of the section that will reset the equation numbering. Default is 1. For example, if the value is 2, the equation numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
 
 # Details
 
