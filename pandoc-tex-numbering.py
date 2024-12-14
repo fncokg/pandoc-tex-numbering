@@ -15,21 +15,34 @@ def prepare(doc):
     doc.pandoc_tex_numbering = {}
     doc.pandoc_tex_numbering["fig_pref"] = doc.get_metadata("figure-prefix", "Figure")
     doc.pandoc_tex_numbering["tab_pref"] = doc.get_metadata("table-prefix", "Table")
+    doc.pandoc_tex_numbering["eq_reset_level"] = doc.get_metadata("equation-reset-level", 1)
     doc.pandoc_tex_numbering["ref_dict"] = {}
-    doc.pandoc_tex_numbering["current_chp"] = 0
+    doc.pandoc_tex_numbering["current_sec"] = [0]*10
     doc.pandoc_tex_numbering["current_eq"] = 0
     doc.pandoc_tex_numbering["current_fig"] = 0
     doc.pandoc_tex_numbering["current_tab"] = 0
     doc.pandoc_tex_numbering["multiline_envs"] = ["cases","align","aligned","alignedat","eqnarray","gather","gathered","multline","split"]
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
-        r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")\}"
+        r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")}"
     )
+    doc.pandoc_tex_numbering["paras2wrap"] = []
 
 def finalize(doc):
+    for para,labels in doc.pandoc_tex_numbering["paras2wrap"]:
+        parent = para.parent
+        idx = parent.content.index(para)
+        del parent.content[idx]
+        div = Div(para,identifier=labels[0])
+        for label in labels[1:]:
+            div = Div(div,identifier=label)
+        parent.content.insert(idx,div)
     del doc.pandoc_tex_numbering
 
-def _current_numbering(doc,item="eq"):
-    chp = doc.pandoc_tex_numbering["current_chp"]
+def _current_section(doc,level=1):
+    return ".".join(map(str,doc.pandoc_tex_numbering["current_sec"][:level]))
+
+def _current_eq_numbering(doc,item="eq"):
+    chp = _current_section(doc,level=doc.pandoc_tex_numbering["eq_reset_level"])
     eq = doc.pandoc_tex_numbering[f"current_{item}"]
     return f"{chp}.{eq}"
 
@@ -39,17 +52,16 @@ def _parse_multiline_environment(root_node,doc):
     environment_body = ""
     # Multiple equations
     doc.pandoc_tex_numbering["current_eq"] += 1
-    current_numbering = _current_numbering(doc,"eq")
+    current_numbering = _current_eq_numbering(doc,"eq")
     for node in root_node.nodelist:
         if isinstance(node,LatexMacroNode):
             if node.macroname == "label":
                 label = node.nodeargd.argnlist[0].nodelist[0].chars
-                
                 labels[label] = current_numbering
             if node.macroname == "\\":
                 environment_body += f"\\qquad{{({current_numbering})}}"
                 doc.pandoc_tex_numbering["current_eq"] += 1
-                current_numbering = _current_numbering(doc,"eq")
+                current_numbering = _current_eq_numbering(doc,"eq")
         environment_body += node.latex_verbatim()
     environment_body += f"\\qquad{{({current_numbering})}}"
     modified_math_str = f"\\begin{{{root_node.environmentname}}}{environment_body}\\end{{{root_node.environmentname}}}"
@@ -58,7 +70,7 @@ def _parse_multiline_environment(root_node,doc):
 def _parse_plain_math(math_str:str,doc):
     labels = {}
     doc.pandoc_tex_numbering["current_eq"] += 1
-    current_numbering = _current_numbering(doc,"eq")
+    current_numbering = _current_eq_numbering(doc,"eq")
     modified_math_str = f"{math_str}\\qquad{{({current_numbering})}}"
     label_strings = re.findall(r"\\label\{(.*?)\}",math_str)
     if len(label_strings) >= 2:
@@ -87,9 +99,10 @@ def parse_latex_math(math_str:str,doc):
 
 
 def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str):
+    url = f"#{label}" if label else ""
     label_items = [
         Str(prefix_str),
-        Link(Str(numbering), url=f"#{label}"),
+        Link(Str(numbering), url=url),
         Str(":"),
         Space()
     ]
@@ -98,27 +111,36 @@ def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str)
 
 
 def action_find_labels(elem, doc):
-    if isinstance(elem,Header) and elem.level == 1:
-        doc.pandoc_tex_numbering["current_chp"] += 1
-        doc.pandoc_tex_numbering["current_eq"] = 0
+    if isinstance(elem,Header):
+        doc.pandoc_tex_numbering["current_sec"][elem.level-1] += 1
+        if elem.level >= doc.pandoc_tex_numbering["eq_reset_level"]:
+            doc.pandoc_tex_numbering["current_eq"] = 0
+        for child in elem.content:
+            if isinstance(child,Span) and "label" in child.attributes:
+                label = child.attributes["label"]
+                numbering = _current_section(doc,level=elem.level)
+                doc.pandoc_tex_numbering["ref_dict"][label] = numbering
     if isinstance(elem,Math) and elem.format == "DisplayMath":
         math_str = elem.text
         modified_math_str,labels = parse_latex_math(math_str,doc)
         elem.text = modified_math_str
         for label,numbering in labels.items():
             doc.pandoc_tex_numbering["ref_dict"][label] = numbering
-            elem.parent.content.append(Span(identifier=f"#{label}"))
+            # elem.parent.content[0]=Span(elem,identifier=label)
+            # elem.parent.content.append(Span(identifier=label))
+        doc.pandoc_tex_numbering["paras2wrap"].append([elem.parent,list(labels.keys())])
     if isinstance(elem,Figure):
         doc.pandoc_tex_numbering["current_fig"] += 1
         label = elem.identifier
-        numbering = _current_numbering(doc,"fig")
-        doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+        numbering = _current_eq_numbering(doc,"fig")
+        if label:
+            doc.pandoc_tex_numbering["ref_dict"][label] = numbering
         caption_plain: Plain = elem.caption.content[0]
         add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"])
     if isinstance(elem,Table):
         doc.pandoc_tex_numbering["current_tab"] += 1
         label = elem.parent.identifier
-        numbering = _current_numbering(doc,"tab")
+        numbering = _current_eq_numbering(doc,"tab")
         doc.pandoc_tex_numbering["ref_dict"][label] = numbering
         caption_plain: Plain = elem.caption.content[0]
         add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"])
