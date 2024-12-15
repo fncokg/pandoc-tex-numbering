@@ -24,10 +24,15 @@ Take `.docx` as an example:
 pandoc --filter pandoc-tex-numbering.py input.tex -o output.docx
 ```
 
+Note: By default, the filter will number the figures, tables, and equations. In case you only want to number some of them (for example in case you want to number equations with this filter while number others with other filters), you can set the corresponding variables in the metadata of your LaTeX file. See the [Customization](#customization) section for more details.
+
 ## Customization
 
 You can set the following variables in the metadata of your LaTeX file to customize the behavior of the filter:
 
+- `number_figures`: Whether to number the figures. Default is `True`.
+- `number_tables`: Whether to number the tables. Default is `True`.
+- `number_equations`: Whether to number the equations. Default is `True`.
 - `figure_prefix`: The prefix of the caption of figures. Default is "Figure".
 - `table_prefix`: The prefix of the caption of tables. Default is "Table".
 - `equation-reset-level`: The level of the section that will reset the equation numbering. Default is 1. For example, if the value is 2, the equation numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
