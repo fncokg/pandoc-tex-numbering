@@ -19,7 +19,7 @@ def prepare(doc):
         "num_fig": doc.get_metadata("number-figures", True),
         "num_tab": doc.get_metadata("number-tables", True),
         "num_eq": doc.get_metadata("number-equations", True),
-        "num_sec": doc.get_metadata("number-sections", False),
+        "num_sec": doc.get_metadata("number-sections", True),
         "fig_pref": doc.get_metadata("figure-prefix", "Figure"),
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
         "num_reset_level": int(doc.get_metadata("number-reset-level", 1)),

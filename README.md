@@ -1,5 +1,5 @@
 # pandoc-tex-numbering
-This is an all-in-one pandoc filter especially for LaTeX files to keep **numbering, hyperlinks, caption prefixs and cross references in (maybe multi-line) equations, figures, and tables**.
+This is an all-in-one pandoc filter especially for LaTeX files to keep **numbering, hyperlinks, caption prefixs and cross references in (maybe multi-line) equations, sections, figures, and tables**.
 
 With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any format pandoc supported, especially `.docx`, while **keep all your auto-numberings and cross references**. 
 
@@ -24,18 +24,37 @@ Take `.docx` as an example:
 pandoc --filter pandoc-tex-numbering.py input.tex -o output.docx
 ```
 
-Note: By default, the filter will number the figures, tables, and equations. In case you only want to number some of them (for example in case you want to number equations with this filter while number others with other filters), you can set the corresponding variables in the metadata of your LaTeX file. See the [Customization](#customization) section for more details.
+Note: By default, the filter will number the sections, figures, tables, and equations. In case you only want to number some of them (for example in case you want to number only equations with this filter while number others with other filters), you can set the corresponding variables in the metadata of your LaTeX file. See the [Customization](#customization) section for more details.
 
 ## Customization
 
 You can set the following variables in the metadata of your LaTeX file to customize the behavior of the filter:
 
+### General
 - `number-figures`: Whether to number the figures. Default is `True`.
 - `number-tables`: Whether to number the tables. Default is `True`.
 - `number-equations`: Whether to number the equations. Default is `True`.
-- `figure-prefix`: The prefix of the caption of figures. Default is "Figure".
-- `table-prefix`: The prefix of the caption of tables. Default is "Table".
+- `number-sections`: Whether to number the sections. Default is `True`.
 - `number-reset-level`: The level of the section that will reset the numbering. Default is 1. For example, if the value is 2, the numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
+
+### Figures
+- `figure-prefix`: The prefix of the caption of figures. Default is "Figure".
+
+### Tables
+- `table-prefix`: The prefix of the caption of tables. Default is "Table".
+
+### Sections
+- `section-format-1`,`section-format-2`,...: The format of the section numbering at each level.
+
+You can use python f-string format to customize the numbering format. The numbers of each level headers are available as fields `h1`,...,`h10`. The default values of `section-format-3` is `{h1}.{h2}.{h3}`, for example.
+
+You can do this trick:
+
+```command
+pandoc --filter pandoc-tex-numbering.py -M section-format-1="Chapter {h1}." -M section-format-2="Section {h1}.{h2}." input.tex -o output.docx
+```
+
+With these metadata (i.e. `section-format-1` set to "Chapter {h1}." and `section-format-2` set to "Section {h1}.{h2}."), the first-level section will be numbered as "Chapter 1.", "Chapter 2." etc., and the second-level section will be numbered as "Section 1.1.", "Section 1.2." etc. (By default, the first-level section is numbered as "1", "2" etc., and the second-level section is numbered as "1.1", "1.2" etc.)
 
 # Details
 
@@ -97,10 +116,10 @@ The results are shown as follows:
 
 ## Customized Metadata
 
-In the following example, we only want to number the equations and set the prefix of figures and tables as "Fig" and "Tab" respectively. We also want to reset the numbering at the second-level section.
+In the following example, we only want to set the prefix of figures and tables as "Fig" and "Tab" respectively and reset all the numbering at the second-level section. We also want to set the format of the first-level section as "Chapter 1.", "Chapter 2." etc.
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 test.tex
+pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 -M section-format-1="Chapter {h1}." test.tex
 ```
 
 Note: It is recommended to set metadata in a separate `.yaml` file rather than in the command line. The command line is only for demonstration.
