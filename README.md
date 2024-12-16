@@ -74,7 +74,7 @@ This equation will be numbered as a whole block, say, (1.1), while:
 
 This equation will be numbered line by line, say, (1.2) and (1.3)
 
-**NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment.
+**NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment via the `*` mark. *This may be fixed by a custom lua reader to keep those information in the future.*
 
 # Examples
 
