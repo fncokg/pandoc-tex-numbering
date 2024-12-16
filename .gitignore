@@ -1,4 +1,5 @@
-aux
-*.pdf
-*.docx
+**/aux
+**/*.pdf
+**/*.docx
 **/*.log
+**/*.tmp
