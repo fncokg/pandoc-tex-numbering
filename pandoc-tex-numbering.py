@@ -11,23 +11,33 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
+MAX_LEVEL = 10
+
 def prepare(doc):
     # These are global variables that will be used in the action functions, and will be destroyed after the finalization
     doc.pandoc_tex_numbering = {
         "num_fig": doc.get_metadata("number-figures", True),
         "num_tab": doc.get_metadata("number-tables", True),
         "num_eq": doc.get_metadata("number-equations", True),
+        "num_sec": doc.get_metadata("number-sections", False),
         "fig_pref": doc.get_metadata("figure-prefix", "Figure"),
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
         "num_reset_level": int(doc.get_metadata("number-reset-level", 1)),
         "ref_dict": {},
-        "current_sec": [0]*10,
+        "current_sec": [0]*MAX_LEVEL,
         "current_eq": 0,
         "current_fig": 0,
         "current_tab": 0,
         "multiline_envs": ["cases","align","aligned","gather","multline","flalign"],
         "paras2wrap": []
     }
+    section_formats = {}
+    for i in range(1,MAX_LEVEL+1):
+        default_format = ".".join([f"{{h{j}}}" for j in range(1,i+1)])
+        current_format = doc.get_metadata(f"section-format-{i}", default_format)
+        section_formats[i] = lambda numbers,f=current_format: f.format(**{f"h{j}":str(numbers[j-1]) for j in range(1,i+1)})
+    doc.pandoc_tex_numbering["sec_num_formats"] = section_formats
+    
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
         r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")}"
     )
@@ -126,6 +136,14 @@ def find_labels_header(elem,doc):
             label = child.attributes["label"]
             numbering = _current_section(doc,level=elem.level)
             doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+    if doc.pandoc_tex_numbering["num_sec"]:
+        # Find the first string in the header and add numbering to it
+        # for child in elem.content:
+        #     if isinstance(child,Str):
+        #         child.text = doc.pandoc_tex_numbering["sec_num_formats"][elem.level](doc.pandoc_tex_numbering["current_sec"]) + child.text
+        #         break
+        elem.content.insert(0,Space())
+        elem.content.insert(0,Str(doc.pandoc_tex_numbering["sec_num_formats"][elem.level](doc.pandoc_tex_numbering["current_sec"])))
 
 def find_labels_math(elem,doc):
     math_str = elem.text
