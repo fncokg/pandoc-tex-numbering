@@ -12,23 +12,25 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
 def prepare(doc):
-    doc.pandoc_tex_numbering = {}
-    doc.pandoc_tex_numbering["num_fig"] = doc.get_metadata("number-figures", True)
-    doc.pandoc_tex_numbering["num_tab"] = doc.get_metadata("number-tables", True)
-    doc.pandoc_tex_numbering["num_eq"] = doc.get_metadata("number-equations", True)
-    doc.pandoc_tex_numbering["fig_pref"] = doc.get_metadata("figure-prefix", "Figure")
-    doc.pandoc_tex_numbering["tab_pref"] = doc.get_metadata("table-prefix", "Table")
-    doc.pandoc_tex_numbering["eq_reset_level"] = doc.get_metadata("equation-reset-level", 1)
-    doc.pandoc_tex_numbering["ref_dict"] = {}
-    doc.pandoc_tex_numbering["current_sec"] = [0]*10
-    doc.pandoc_tex_numbering["current_eq"] = 0
-    doc.pandoc_tex_numbering["current_fig"] = 0
-    doc.pandoc_tex_numbering["current_tab"] = 0
-    doc.pandoc_tex_numbering["multiline_envs"] = ["cases","align","aligned","alignedat","eqnarray","gather","gathered","multline","split"]
+    # These are global variables that will be used in the action functions, and will be destroyed after the finalization
+    doc.pandoc_tex_numbering = {
+        "num_fig": doc.get_metadata("number-figures", True),
+        "num_tab": doc.get_metadata("number-tables", True),
+        "num_eq": doc.get_metadata("number-equations", True),
+        "fig_pref": doc.get_metadata("figure-prefix", "Figure"),
+        "tab_pref": doc.get_metadata("table-prefix", "Table"),
+        "num_reset_level": int(doc.get_metadata("number-reset-level", 1)),
+        "ref_dict": {},
+        "current_sec": [0]*10,
+        "current_eq": 0,
+        "current_fig": 0,
+        "current_tab": 0,
+        "multiline_envs": ["cases","align","gather","multline","flalign"],
+        "paras2wrap": []
+    }
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
         r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")}"
     )
-    doc.pandoc_tex_numbering["paras2wrap"] = []
 
 def finalize(doc):
     for para,labels in doc.pandoc_tex_numbering["paras2wrap"]:
@@ -46,7 +48,7 @@ def _current_section(doc,level=1):
     return ".".join(map(str,doc.pandoc_tex_numbering["current_sec"][:level]))
 
 def _current_eq_numbering(doc,item="eq"):
-    chp = _current_section(doc,level=doc.pandoc_tex_numbering["eq_reset_level"])
+    chp = _current_section(doc,level=doc.pandoc_tex_numbering["num_reset_level"])
     eq = doc.pandoc_tex_numbering[f"current_{item}"]
     return f"{chp}.{eq}"
 
@@ -96,7 +98,7 @@ def parse_latex_math(math_str:str,doc):
         nodelist,_,_ = walker.get_latex_nodes(pos=0)
         if len(nodelist) == 1:
             root_node = nodelist[0]
-            if isinstance(root_node,LatexEnvironmentNode) and root_node.environmentname in doc.pandoc_tex_numbering["multiline_envs"] and not re.search(r"\\label",math_str) is None:
+            if isinstance(root_node,LatexEnvironmentNode) and root_node.environmentname in doc.pandoc_tex_numbering["multiline_envs"]:
                 return _parse_multiline_environment(root_node,doc)
     # Otherwise, add numbering to the whole math block
     return _parse_plain_math(math_str,doc)
@@ -117,7 +119,7 @@ def find_labels_header(elem,doc):
     doc.pandoc_tex_numbering["current_sec"][elem.level-1] += 1
     for i in range(elem.level,10):
         doc.pandoc_tex_numbering["current_sec"][i] = 0
-    if elem.level >= doc.pandoc_tex_numbering["eq_reset_level"]:
+    if elem.level >= doc.pandoc_tex_numbering["num_reset_level"]:
         doc.pandoc_tex_numbering["current_eq"] = 0
     for child in elem.content:
         if isinstance(child,Span) and "label" in child.attributes:

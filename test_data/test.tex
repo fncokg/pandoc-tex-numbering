@@ -1,0 +1,73 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{float}
+
+\title{pandoc-tex-numbering Test Document}
+\begin{document}
+\maketitle
+\section{Introduction}
+This document is created to test the pandoc numbering functions for equations, figures, and tables.
+
+\section{Equations}
+\subsection{Multiline Equations}
+Here is a multiline equation using the \texttt{aligned} environment:
+\begin{equation}
+    \begin{aligned}
+        f(x) &= x^2 + 2x + 1 \\
+        g(x) &= \sin(x)
+    \end{aligned}
+    \label{eq:quadratic}
+\end{equation}
+
+Here is another multiline equation using the \texttt{align} environment:
+\begin{align}
+    a &= b + c \label{eq:align1} \\
+    d &= e - f \label{eq:align2}
+\end{align}
+
+\subsection{Single Line Equations}
+Here is a single line equation:
+\begin{equation}
+    E = mc^2 \label{eq:einstein}
+\end{equation}
+
+\subsection{References to Equations}
+Equation \ref{eq:quadratic} represents a quadratic function. Equation \ref{eq:align1} and \ref{eq:align2} are simple algebraic equations. Equation \ref{eq:einstein} is Einstein's mass-energy equivalence.
+
+\section{Figures and Tables}
+\subsection{Figures}
+Figure \ref{fig:example} shows an example image.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{./example-image}
+    \caption{Example Image}
+    \label{fig:example}
+\end{figure}
+
+\subsection{Tables}
+Table \ref{tab:example} shows an example table.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Column 1 & Column 2 & Column 3 \\
+        \hline
+        Data 1 & Data 2 & Data 3 \\
+        Data 4 & Data 5 & Data 6 \\
+        \hline
+    \end{tabular}
+    \caption{Example Table}
+    \label{tab:example}
+\end{table}
+
+\subsection{References to Figures and Tables}
+Figure \ref{fig:example} is an example image. Table \ref{tab:example} is an example table.
+
+\section{Conclusion}
+This document includes examples of multiline equations, single line equations, figures, and tables with labels and references to test the pandoc numbering functions.
+
+\end{document}

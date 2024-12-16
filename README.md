@@ -30,12 +30,12 @@ Note: By default, the filter will number the figures, tables, and equations. In 
 
 You can set the following variables in the metadata of your LaTeX file to customize the behavior of the filter:
 
-- `number_figures`: Whether to number the figures. Default is `True`.
-- `number_tables`: Whether to number the tables. Default is `True`.
-- `number_equations`: Whether to number the equations. Default is `True`.
-- `figure_prefix`: The prefix of the caption of figures. Default is "Figure".
-- `table_prefix`: The prefix of the caption of tables. Default is "Table".
-- `equation-reset-level`: The level of the section that will reset the equation numbering. Default is 1. For example, if the value is 2, the equation numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
+- `number-figures`: Whether to number the figures. Default is `True`.
+- `number-tables`: Whether to number the tables. Default is `True`.
+- `number-equations`: Whether to number the equations. Default is `True`.
+- `figure-prefix`: The prefix of the caption of figures. Default is "Figure".
+- `table-prefix`: The prefix of the caption of tables. Default is "Table".
+- `number-reset-level`: The level of the section that will reset the numbering. Default is 1. For example, if the value is 2, the numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
 
 # Details
 
@@ -43,56 +43,67 @@ You can set the following variables in the metadata of your LaTeX file to custom
 
 All the figures and tables are supported. All references to figures and tables are replaced by their numbers, and all the captions are added prefixs such as "Figure 1.1: ".
 
-You can determine the prefix of figures and tables by changing the variables `figure_prefix` and `table_prefix` in the metadata, default values are "Figure" and "Table" respectively.
+You can determine the prefix of figures and tables by changing the variables `figure-prefix` and `table-prefix` in the metadata, default values are "Figure" and "Table" respectively.
 
 ## Equations
 
-Single-line equations are auto-numbered. At the end of every equation, a label is added such as `(1.1)`.
+Equations under multiline environments such as `align`, `cases` etc. are numbered line by line, and the others are numbered as a whole block.
 
-Multi-line equations are:
+That is to say, if you want the filter to number multiline equations line by line, use `align`, `cases` etc. environments directly. If you want the filter to number the whole block as a whole, use `split`, `aligned` etc. environments in the `equation` environment.
 
-- numbered for each line if there's at least one `\label{}` command inside the environment.
-- numbered for the whole block if there's no `\label{}` command inside the environment.
-
-Therefore, if you want to reference a multi-line equation as a whole, you should put a `\label{}` command outside the environment. While if you want to reference a specific line, you should put a `\label{}` command at the corresponding line.
-
-For example, in the following code:
-    
-```latex
-\begin{equation}
-\begin{align}
-    a &= b \label{eq:1} \\
-    c &= d \label{eq:2}
-\end{align}
-\end{equation}
-```
-
-The filter will numbering the first line as (1.1) and the second line as (1.2). While in the following code:
+For example, as shown in `test_data/test.tex`:
 
 ```latex
 \begin{equation}
-\begin{align}
-    a &= b \\
-    c &= d
-\end{align}
-\label{eq:1}
+    \begin{aligned}
+        f(x) &= x^2 + 2x + 1 \\
+        g(x) &= \sin(x)
+    \end{aligned}
+    \label{eq:quadratic}
 \end{equation}
 ```
 
-The filter will numbering the whole block as (1.1).
+This equation will be numbered as a whole block, say, (1.1), while:
+
+```latex
+\begin{align}
+    a &= b + c \label{eq:align1} \\
+    d &= e - f \label{eq:align2}
+\end{align}
+```
+
+This equation will be numbered line by line, say, (1.2) and (1.3)
+
+**NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment.
 
 # Examples
 
-With the testing file `testing_data/test.tex`, you can run:
+With the testing file `testing_data/test.tex`:
+
+## Default Metadata
 
 ```bash
-pandoc --filter pandoc-tex-numbering.py testing_data/test.tex -o testing_data/test.docx
+pandoc -o output.docx -F pandoc-tex-numbering.py test.tex 
 ```
 
 The results are shown as follows:
 
-![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/output-page1.jpg?raw=true)
-![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/output-page2.jpg?raw=true)
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/default-page1.jpg?raw=true)
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/default-page2.jpg?raw=true)
+
+## Customized Metadata
+
+In the following example, we only want to number the equations and set the prefix of figures and tables as "Fig" and "Tab" respectively. We also want to reset the numbering at the second-level section.
+
+```bash
+pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 test.tex
+```
+
+Note: It is recommended to set metadata in a separate `.yaml` file rather than in the command line. The command line is only for demonstration.
+
+The results are shown as follows:
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page1.jpg?raw=true)
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page2.jpg?raw=true)
 
 # Development
 
