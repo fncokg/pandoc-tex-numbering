@@ -76,6 +76,10 @@ This equation will be numbered line by line, say, (1.2) and (1.3)
 
 **NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment via the `*` mark. *This may be fixed by a custom lua reader to keep those information in the future.*
 
+## Log
+
+Some warning message will be shown in the log file named `pandoc-tex-numbering.log` in the same directory as the output file. You can check this file if you encounter any problems or report those messages in the issues.
+
 # Examples
 
 With the testing file `testing_data/test.tex`:
@@ -109,4 +113,13 @@ The results are shown as follows:
 
 If you want to modify the filter, you can modify the `pandoc-tex-numbering.py` directly. The filter is written in Python and based on `panflute`.
 
-The logical structure of the filter is quiet straightforward. It is recommended to decalre all your possible variables in the `prepare` function, and save them in the `doc.pandoc_tex_numbering:dict` object. This object will be automatically destroyed after the filter is executed.
+## Modify Configuration
+
+Some configurations have not coded as metadata yet, but you can easily edit them in the python code. For example, you can add new environment names to `doc.pandoc_tex_numbering:"multiline_envs"` to support more multiline environments.
+
+## Extend the Filter
+
+The logical structure of the filter is quiet straightforward. You can see this filter as a scaffold for your own filter. For example, `_parse_multiline_environment` function receives a latex math node and the doc object and returns a new modified math string with the numbering and respective labels. You can add your customized latex syntax analysis logic to support more complicated circumstances.
+
+It is recommended to decalre all your possible variables in the `prepare` function, and save them in the `doc.pandoc_tex_numbering:dict` object. This object will be automatically destroyed after the filter is executed.
+
