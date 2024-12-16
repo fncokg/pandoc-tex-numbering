@@ -25,7 +25,7 @@ def prepare(doc):
         "current_eq": 0,
         "current_fig": 0,
         "current_tab": 0,
-        "multiline_envs": ["cases","align","gather","multline","flalign"],
+        "multiline_envs": ["cases","align","aligned","gather","multline","flalign"],
         "paras2wrap": []
     }
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(

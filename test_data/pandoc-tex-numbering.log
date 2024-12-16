@@ -1,6 +1,0 @@
-2024-12-16 10:28:52,817 WARNING Reference not found: tab:example
-2024-12-16 10:28:52,826 WARNING Reference not found: tab:example
-2024-12-16 10:43:47,028 WARNING Multiple label_strings in one math block: ['eq:align1', 'eq:align2']
-2024-12-16 10:44:02,945 WARNING Multiple label_strings in one math block: ['eq:align1', 'eq:align2']
-2024-12-16 10:44:27,846 WARNING Multiple label_strings in one math block: ['eq:align1', 'eq:align2']
-2024-12-16 10:44:33,022 WARNING Multiple label_strings in one math block: ['eq:align1', 'eq:align2']
