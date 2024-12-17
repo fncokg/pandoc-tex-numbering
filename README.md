@@ -128,7 +128,9 @@ The results are shown as follows:
 
 ## Customized Metadata
 
-In the following example, we only want to set the prefix of figures and tables as "Fig" and "Tab" respectively and reset all the numbering at the second-level section. We also want to set the format of the first-level section as "Chapter 1.", "Chapter 2." etc.
+In the following example, we only want to set the prefix of figures and tables as "Fig" and "Tab" respectively and reset all the numbering at the second-level section. *Only for the purpose of demonstration*, we also want to use Chinese non-arabic numbers for the first level sections as "第一章" and English numbers for the second level sections as "Section 1.1.".
+
+**In this case, please note that the `lang_num.py` file must be also included in the same directory as the filter.**
 
 ```bash
 pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 -M non-arabic-numbers=true -M section-format-1="第{h1_zh}章" -M section-format-2="Section {h1}.{h2}." test.tex
