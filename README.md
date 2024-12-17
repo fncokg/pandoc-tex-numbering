@@ -41,9 +41,9 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
 
 ### Sections
-- `section-format-1`,`section-format-2`,...: The format of the section numbering at each level. For more details, see the [Details of Sections](#sections) section. Default is "{h1}", "{h1}.{h2}" etc.
+- `section-format-1`, `section-format-2`,...: The format of the section numbering at each level. For more details, see the [Details of Sections](#sections) section. Default is `"{h1}"`, `"{h1}.{h2}"` etc.
 - `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `False`. If set to `True`, all non arabic section fields are also supported. For more details, see the [Details of Sections](#sections) section. **In that case, the `lang_num.py` file must also be included in the same directory as the filter.**
-- 
+
 ### Figures
 - `figure-prefix`: The prefix of the caption of figures. Default is "Figure".
 
@@ -132,11 +132,26 @@ In the following example, we only want to set the prefix of figures and tables a
 
 **In this case, please note that the `lang_num.py` file must be also included in the same directory as the filter.**
 
+Directly in the command line:
+
 ```bash
 pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 -M non-arabic-numbers=true -M section-format-1="第{h1_zh}章" -M section-format-2="Section {h1}.{h2}." test.tex
 ```
 
-Note: It is recommended to set metadata in a separate `.yaml` file rather than in the command line. The command line is only for demonstration.
+Or run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
+
+```bash
+pandoc -o output.docx -F pandoc-tex-numbering.py --metadata-file metadata.yaml test.tex
+```
+
+```yaml
+figure-prefix: Fig
+table-prefix: Tab
+number-reset-level: 2
+non-arabic-numbers: true
+section-format-1: "第{h1_zh}章"
+section-format-2: "Section {h1}.{h2}."
+```
 
 The results are shown as follows:
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page1.jpg?raw=true)
