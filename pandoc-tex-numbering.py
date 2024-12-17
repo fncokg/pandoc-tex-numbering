@@ -13,31 +13,52 @@ logger.setLevel(logging.INFO)
 
 MAX_LEVEL = 10
 
+def number_fields(numbers,max_levels,non_arabic_numbers=False):
+    if non_arabic_numbers:
+        from lang_num import language_functions
+    fields = {}
+    for i in range(1,max_levels+1):
+        fields[f"h{i}"] = str(numbers[i-1])
+        if non_arabic_numbers:
+            for language,func in language_functions.items():
+                fields[f"h{i}_{language}"] = func(numbers[i-1])
+    return fields
+
 def prepare(doc):
     # These are global variables that will be used in the action functions, and will be destroyed after the finalization
     doc.pandoc_tex_numbering = {
+        # settings
         "num_fig": doc.get_metadata("number-figures", True),
         "num_tab": doc.get_metadata("number-tables", True),
         "num_eq": doc.get_metadata("number-equations", True),
         "num_sec": doc.get_metadata("number-sections", True),
+        "num_reset_level": int(doc.get_metadata("number-reset-level", 1)),
+
         "fig_pref": doc.get_metadata("figure-prefix", "Figure"),
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
-        "num_reset_level": int(doc.get_metadata("number-reset-level", 1)),
+        "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
+        "non_arabic_numbers": doc.get_metadata("non-arabic-numbers", False),
+
+        # state variables
         "ref_dict": {},
         "current_sec": [0]*MAX_LEVEL,
         "current_eq": 0,
         "current_fig": 0,
         "current_tab": 0,
-        "multiline_envs": ["cases","align","aligned","gather","multline","flalign"],
         "paras2wrap": []
     }
+
+    # Initialize the section numbering formats
     section_formats = {}
     for i in range(1,MAX_LEVEL+1):
         default_format = ".".join([f"{{h{j}}}" for j in range(1,i+1)])
         current_format = doc.get_metadata(f"section-format-{i}", default_format)
-        section_formats[i] = lambda numbers,f=current_format: f.format(**{f"h{j}":str(numbers[j-1]) for j in range(1,i+1)})
+        section_formats[i] = lambda numbers,f=current_format: f.format(
+            **number_fields(numbers,i,doc.pandoc_tex_numbering["non_arabic_numbers"])
+        )
     doc.pandoc_tex_numbering["sec_num_formats"] = section_formats
     
+    # Prepare the multiline environment filter pattern for fast checking
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
         r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")}"
     )

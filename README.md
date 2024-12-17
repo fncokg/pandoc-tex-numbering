@@ -37,36 +37,26 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `number-sections`: Whether to number the sections. Default is `True`.
 - `number-reset-level`: The level of the section that will reset the numbering. Default is 1. For example, if the value is 2, the numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
 
+### Equations
+- `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
+
+### Sections
+- `section-format-1`,`section-format-2`,...: The format of the section numbering at each level. For more details, see the [Details of Sections](#sections) section. Default is "{h1}", "{h1}.{h2}" etc.
+- `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `False`. If set to `True`, all non arabic section fields are also supported. For more details, see the [Details of Sections](#sections) section. **In that case, the `lang_num.py` file must also be included in the same directory as the filter.**
+- 
 ### Figures
 - `figure-prefix`: The prefix of the caption of figures. Default is "Figure".
 
 ### Tables
 - `table-prefix`: The prefix of the caption of tables. Default is "Table".
 
-### Sections
-- `section-format-1`,`section-format-2`,...: The format of the section numbering at each level.
-
-You can use python f-string format to customize the numbering format. The numbers of each level headers are available as fields `h1`,...,`h10`. The default values of `section-format-3` is `{h1}.{h2}.{h3}`, for example.
-
-You can do this trick:
-
-```command
-pandoc --filter pandoc-tex-numbering.py -M section-format-1="Chapter {h1}." -M section-format-2="Section {h1}.{h2}." input.tex -o output.docx
-```
-
-With these metadata (i.e. `section-format-1` set to "Chapter {h1}." and `section-format-2` set to "Section {h1}.{h2}."), the first-level section will be numbered as "Chapter 1.", "Chapter 2." etc., and the second-level section will be numbered as "Section 1.1.", "Section 1.2." etc. (By default, the first-level section is numbered as "1", "2" etc., and the second-level section is numbered as "1.1", "1.2" etc.)
-
 # Details
-
-## Figures and Tables
-
-All the figures and tables are supported. All references to figures and tables are replaced by their numbers, and all the captions are added prefixs such as "Figure 1.1: ".
-
-You can determine the prefix of figures and tables by changing the variables `figure-prefix` and `table-prefix` in the metadata, default values are "Figure" and "Table" respectively.
 
 ## Equations
 
-Equations under multiline environments such as `align`, `cases` etc. are numbered line by line, and the others are numbered as a whole block.
+If metadata `number-equations` is set to `True`, all the equations will be numbered. The numbers are added at the end of the equations and the references to the equations are replaced by their numbers.
+
+Equations under multiline environments (specified by metadata `multiline-environments` ) such as `align`, `cases` etc. are numbered line by line, and the others are numbered as a whole block.
 
 That is to say, if you want the filter to number multiline equations line by line, use `align`, `cases` etc. environments directly. If you want the filter to number the whole block as a whole, use `split`, `aligned` etc. environments in the `equation` environment.
 
@@ -95,6 +85,28 @@ This equation will be numbered line by line, say, (1.2) and (1.3)
 
 **NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment via the `*` mark. *This may be fixed by a custom lua reader to keep those information in the future.*
 
+## Sections
+
+If metadata `number-sections` is set to `True`, all the sections will be numbered. The numbers are added at the beginning of the section titles and the references to the sections are replaced by their numbers.
+
+You can customize the format of the section numbering added at the beginning of the section titles by setting the metadata `section-format-1`, `section-format-2`, etc. All of these metadata accept a python f-string format with fields `h1`, `h2`, ..., `h10` representing the numbers of each level headers. For example, set `section-format-1` to `Chapter {h1}.` and `section-format-2` to `Section {h1}.{h2}.` to number the first-level section as "Chapter 1.", "Chapter 2." etc., and the second-level section as "Section 1.1.", "Section 1.2." etc. The default values of `section-format-1`, `section-format-2`, etc. are in fact `{h1}`, `{h1}.{h2}`, etc. respectively.
+
+Sometimes, non arabic numberings are needed. For example, in Chinese, with `section-format-1="第{h1}章"`, the users get "第1章", "第2章" etc. However, sometimes the users may need "第一章", "第二章" etc. To achieve this, we also support non arabic numbers by series of non-arabic fields. For example, when `{h1}` is 12, the Chinese number field `{h1_zh}` will be "十二". To enable this feature, you need to:
+
+- set `non-arabic-numbers` to `True` in the metadata.
+- include the `lang_num.py` file in the same directory as the filter.
+- set `section-format-1="第{h1_zh}章"` in the metadata.
+
+Note that:
+- The non-arbic number support is by default turned off. You need to explicitly turn it on.
+- The current version only supports simplified Chinese numbers. If you need other languages, you can modify the `lang_num.py` file. See the [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support) section for more details.
+
+## Figures and Tables
+
+All the figures and tables are supported. All references to figures and tables are replaced by their numbers, and all the captions are added prefixs such as "Figure 1.1: ".
+
+You can determine the prefix of figures and tables by changing the variables `figure-prefix` and `table-prefix` in the metadata, default values are "Figure" and "Table" respectively.
+
 ## Log
 
 Some warning message will be shown in the log file named `pandoc-tex-numbering.log` in the same directory as the output file. You can check this file if you encounter any problems or report those messages in the issues.
@@ -119,7 +131,7 @@ The results are shown as follows:
 In the following example, we only want to set the prefix of figures and tables as "Fig" and "Tab" respectively and reset all the numbering at the second-level section. We also want to set the format of the first-level section as "Chapter 1.", "Chapter 2." etc.
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 -M section-format-1="Chapter {h1}." test.tex
+pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 -M non-arabic-numbers=true -M section-format-1="第{h1_zh}章" -M section-format-2="Section {h1}.{h2}." test.tex
 ```
 
 Note: It is recommended to set metadata in a separate `.yaml` file rather than in the command line. The command line is only for demonstration.
@@ -130,11 +142,14 @@ The results are shown as follows:
 
 # Development
 
-If you want to modify the filter, you can modify the `pandoc-tex-numbering.py` directly. The filter is written in Python and based on `panflute`.
+## Custom Non-Arabic Numbers Support
 
-## Modify Configuration
+Currently, the filter supports only Chinese non-arabic numbers. If you want to support other languages, you can modify the `lang_num.py` file. For example, if you want to support the non-arabic numbers in the language `foo`, you can:
 
-Some configurations have not coded as metadata yet, but you can easily edit them in the python code. For example, you can add new environment names to `doc.pandoc_tex_numbering:"multiline_envs"` to support more multiline environments.
+1. Define a new function `arabic2foo(num:int)->str` that converts the arabic number to the corresponding non-arabic number.
+2. Add the function to the `language_functions` dictionary with the corresponding language name as the key, for example `{"foo":arabic2foo}`.
+
+Then you can set the metadata `section-format-1="Chapter {h1_foo}."` to enable the non-arabic numbers in the filter.
 
 ## Extend the Filter
 
