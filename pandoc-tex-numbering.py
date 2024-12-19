@@ -38,6 +38,7 @@ def prepare(doc):
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
         "eq_pref": doc.get_metadata("equation-prefix", "Equation"),
         "sec_pref": doc.get_metadata("section-prefix", "Section"),
+        "pref_space":doc.get_metadata("prefix-space", True),
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
         "non_arabic_numbers": doc.get_metadata("non-arabic-numbers", False),
@@ -138,7 +139,7 @@ def parse_latex_math(math_str:str,doc):
     return _parse_plain_math(math_str,doc)
 
 
-def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str):
+def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str,space=True):
     url = f"#{label}" if label else ""
     label_items = [
         Str(prefix_str),
@@ -146,6 +147,8 @@ def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str)
         Str(":"),
         Space()
     ]
+    if space:
+        caption_plain.content.insert(1,Space())
     for item in label_items[::-1]:
         caption_plain.content.insert(0, item)
 
@@ -201,7 +204,7 @@ def find_labels_table(elem,doc):
         "type": "tab"
     }
     caption_plain: Plain = elem.caption.content[0]
-    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"].capitalize())
+    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
 
 def find_labels_figure(elem,doc):
     doc.pandoc_tex_numbering["current_fig"] += 1
@@ -213,7 +216,7 @@ def find_labels_figure(elem,doc):
             "type": "fig"
         }
     caption_plain: Plain = elem.caption.content[0]
-    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"].capitalize())
+    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
 
 def action_find_labels(elem, doc):
     # Find labels in headers, math blocks, figures and tables
@@ -237,11 +240,13 @@ def action_replace_refs(elem, doc):
             elif elem.attributes['reference-type'] == 'ref+label':
                 label_type = numbering_info["type"]
                 prefix = doc.pandoc_tex_numbering[f"{label_type}_pref"].lower()
-                elem.content[0].text = f"{prefix}{numbering_info['num']}"
+                text = f"{prefix} {numbering_info['num']}" if doc.pandoc_tex_numbering["pref_space"] else f"{prefix}{numbering_info['num']}"
+                elem.content[0].text = text
             elif elem.attributes['reference-type'] == 'ref+Label':
                 label_type = numbering_info["type"]
                 prefix = doc.pandoc_tex_numbering[f"{label_type}_pref"].capitalize()
-                elem.content[0].text = f"{prefix} {numbering_info['num']}"
+                text = f"{prefix} {numbering_info['num']}" if doc.pandoc_tex_numbering["pref_space"] else f"{prefix}{numbering_info['num']}"
+                elem.content[0].text = text
             else:
                 logger.warning(f"Unknown reference-type: {elem.attributes['reference-type']}")
         else:
