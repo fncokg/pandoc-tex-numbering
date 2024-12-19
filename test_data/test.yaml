@@ -1,0 +1,8 @@
+figure-prefix: Fig
+table-prefix: Tab
+number-reset-level: 2
+non-arabic-numbers: true
+section-format-source-1: "第{h1_zh}章"
+section-format-source-2: "Section {h1}.{h2}."
+section-format-ref-1: "Chapter {h1}"
+section-format-ref-2: "第{h1}.{h2}节"

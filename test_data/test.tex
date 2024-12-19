@@ -18,9 +18,9 @@
 \section{Introduction}
 This document is created to test the pandoc numbering functions for equations, figures, and tables. \Cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref) provide examples of equations, figures, and tables.
 
-\section{Equations\label{sec:equations}}
+\section{Equations}
 
-\subsection{Multiline Equations}
+\subsection{Multiline Equations\label{sec:equations}}
 Here is a multiline equation using the \texttt{aligned} environment:
 \begin{equation}
     \begin{aligned}
@@ -45,7 +45,7 @@ Here is a single line equation:
 
 \subsection{References to Equations}
 \Cref{eq:quadratic} (cref) represents a quadratic function. Equation \ref{eq:align1} (ref) and \cref{eq:align2} (cref) are simple algebraic equations. \Cref{eq:einstein} (cref) is Einstein's mass-energy equivalence. 
-
+% TODO: You can also refer to equations at once like: \cref{eq:quadratic,eq:align1,eq:align2,eq:einstein}.
 
 \section{Figures and Tables\label{sec:figures_tables}}
 

@@ -17,7 +17,7 @@ def number_fields(numbers,max_levels,non_arabic_numbers=False):
     if non_arabic_numbers:
         from lang_num import language_functions
     fields = {}
-    for i in range(1,max_levels+1):
+    for i in range(1,len(numbers)+1):
         fields[f"h{i}"] = str(numbers[i-1])
         if non_arabic_numbers:
             for language,func in language_functions.items():
@@ -38,7 +38,7 @@ def prepare(doc):
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
         "eq_pref": doc.get_metadata("equation-prefix", "Equation"),
         "sec_pref": doc.get_metadata("section-prefix", "Section"),
-        "pref_space":doc.get_metadata("prefix-space", True),
+        "pref_space": doc.get_metadata("prefix-space", True),
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
         "non_arabic_numbers": doc.get_metadata("non-arabic-numbers", False),
@@ -53,14 +53,24 @@ def prepare(doc):
     }
 
     # Initialize the section numbering formats
-    section_formats = {}
+    section_formats_source = {}
+    section_fromats_ref = {}
+    ref_default_prefix = doc.pandoc_tex_numbering["sec_pref"]
+    if doc.pandoc_tex_numbering["pref_space"]:
+        ref_default_prefix += " "
     for i in range(1,MAX_LEVEL+1):
-        default_format = ".".join([f"{{h{j}}}" for j in range(1,i+1)])
-        current_format = doc.get_metadata(f"section-format-{i}", default_format)
-        section_formats[i] = lambda numbers,f=current_format: f.format(
+        default_format_source = ".".join([f"{{h{j}}}" for j in range(1,i+1)])
+        default_format_ref = f"{ref_default_prefix} {default_format_source}"
+        current_format_source = doc.get_metadata(f"section-format-source-{i}", default_format_source)
+        current_format_ref = doc.get_metadata(f"section-format-ref-{i}", default_format_ref)
+        section_formats_source[i] = lambda numbers,f=current_format_source: f.format(
             **number_fields(numbers,i,doc.pandoc_tex_numbering["non_arabic_numbers"])
         )
-    doc.pandoc_tex_numbering["sec_num_formats"] = section_formats
+        section_fromats_ref[i] = lambda numbers,f=current_format_ref: f.format(
+            **number_fields(numbers,i,doc.pandoc_tex_numbering["non_arabic_numbers"])
+        )
+    doc.pandoc_tex_numbering["sec_format_source"] = section_formats_source
+    doc.pandoc_tex_numbering["sec_format_ref"] = section_fromats_ref
     
     # Prepare the multiline environment filter pattern for fast checking
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
@@ -169,7 +179,7 @@ def find_labels_header(elem,doc):
             }
     if doc.pandoc_tex_numbering["num_sec"]:
         elem.content.insert(0,Space())
-        elem.content.insert(0,Str(doc.pandoc_tex_numbering["sec_num_formats"][elem.level](doc.pandoc_tex_numbering["current_sec"])))
+        elem.content.insert(0,Str(doc.pandoc_tex_numbering["sec_format_source"][elem.level](doc.pandoc_tex_numbering["current_sec"])))
 
 def find_labels_math(elem,doc):
     math_str = elem.text
@@ -230,27 +240,41 @@ def action_find_labels(elem, doc):
     if isinstance(elem,Table) and doc.pandoc_tex_numbering["num_tab"]:
         find_labels_table(elem,doc)
 
+def cleveref_numbering(numbering_info,doc,capitalize=False):
+    label_type = numbering_info["type"]
+    num = numbering_info["num"]
+    if label_type == "sec":
+        text = doc.pandoc_tex_numbering["sec_format_ref"][numbering_info["level"]](num.split("."))
+    else:
+        prefix = doc.pandoc_tex_numbering[f"{label_type}_pref"]
+        if doc.pandoc_tex_numbering["pref_space"]:
+            prefix += " "
+        text = f"{prefix}{num}"
+    if capitalize:
+        text = text.capitalize()
+    else:
+        text = text.lower()
+    return text
+
 def action_replace_refs(elem, doc):
     if isinstance(elem, Link) and 'reference-type' in elem.attributes:
-        label = elem.attributes['reference']
-        if label in doc.pandoc_tex_numbering["ref_dict"]:
-            numbering_info = doc.pandoc_tex_numbering["ref_dict"][label]
-            if elem.attributes['reference-type'] == 'ref':
-                elem.content[0].text = numbering_info["num"]
-            elif elem.attributes['reference-type'] == 'ref+label':
-                label_type = numbering_info["type"]
-                prefix = doc.pandoc_tex_numbering[f"{label_type}_pref"].lower()
-                text = f"{prefix} {numbering_info['num']}" if doc.pandoc_tex_numbering["pref_space"] else f"{prefix}{numbering_info['num']}"
-                elem.content[0].text = text
-            elif elem.attributes['reference-type'] == 'ref+Label':
-                label_type = numbering_info["type"]
-                prefix = doc.pandoc_tex_numbering[f"{label_type}_pref"].capitalize()
-                text = f"{prefix} {numbering_info['num']}" if doc.pandoc_tex_numbering["pref_space"] else f"{prefix}{numbering_info['num']}"
-                elem.content[0].text = text
+        labels = elem.attributes['reference'].split(",")
+        if len(labels) == 1:
+            label = labels[0]
+            if label in doc.pandoc_tex_numbering["ref_dict"]:
+                numbering_info = doc.pandoc_tex_numbering["ref_dict"][label]
+                if elem.attributes['reference-type'] == 'ref':
+                    elem.content[0].text = numbering_info["num"]
+                elif elem.attributes['reference-type'] == 'ref+label':
+                    elem.content[0].text = cleveref_numbering(numbering_info,doc,capitalize=False)
+                elif elem.attributes['reference-type'] == 'ref+Label':
+                    elem.content[0].text = cleveref_numbering(numbering_info,doc,capitalize=True)
+                else:
+                    logger.warning(f"Unknown reference-type: {elem.attributes['reference-type']}")
             else:
-                logger.warning(f"Unknown reference-type: {elem.attributes['reference-type']}")
+                logger.warning(f"Reference not found: {label}")
         else:
-            logger.warning(f"Reference not found: {label}")
+            logger.warning(f"Currently only support one label in reference: {labels}")
 
 def main(doc=None):
     return run_filters([action_find_labels ,action_replace_refs], doc=doc,prepare=prepare, finalize=finalize)
