@@ -146,6 +146,7 @@ The results are shown as follows:
 
 In the following example, we custom the following (maybe silly) items *only for the purpose of demonstration*:
 - Use all prefixes as "Fig", "Tab", "Eq" respectively.
+- Reset the numbering at the second level sections, such that the numbering will be shown as "1.1.1", "3.2.1" etc.
 - At the beginning of sections, use Chinese numbers "第一章" for the first level sections and English numbers "Section 1.1" for the second level sections.
 - When referred to, use, in turn, "Chapter 1", "第1.1节" etc.
 
