@@ -196,3 +196,9 @@ The logical structure of the filter is quiet straightforward. You can see this f
 
 It is recommended to decalre all your possible variables in the `prepare` function, and save them in the `doc.pandoc_tex_numbering:dict` object. This object will be automatically destroyed after the filter is executed.
 
+# TODO
+
+There are some known issues and possible improvements:
+- [ ] Support multiple references in `cleveref` package.
+- [ ] Add empty cpation for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
+- [ ] Support `align*` and other non-numbered environments.

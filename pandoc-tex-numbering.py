@@ -225,8 +225,9 @@ def find_labels_figure(elem,doc):
             "num": numbering,
             "type": "fig"
         }
-    caption_plain: Plain = elem.caption.content[0]
-    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
+    if elem.caption:
+        caption_plain: Plain = elem.caption.content[0]
+        add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
 
 def action_find_labels(elem, doc):
     # Find labels in headers, math blocks, figures and tables

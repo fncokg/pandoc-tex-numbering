@@ -5,6 +5,7 @@
 \usepackage{float}
 \usepackage{cleveref} % Added cleveref package
 \usepackage{longtable} % Added longtable package
+\usepackage{bicaption}
 
 % Custom names for cref
 \crefname{equation}{equation}{equations}
@@ -55,7 +56,8 @@ Here is a single line equation:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{./example-image}
-    \caption{Example Image}
+    % \caption{Example Image}
+    \bicaption{Dutch}{English}
     \label{fig:example}
 \end{figure}
 
