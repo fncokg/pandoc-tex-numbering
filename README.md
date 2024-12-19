@@ -6,15 +6,15 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 `pandoc-tex-numbering` also supports:
 - **Multi-line environments** in LaTeX math block such as `align`, `cases` etc.
 - **Non-arabic numbers** for the section numbering such as Chinese numbers "第一章", "第二节" etc.
-- **cleveref** package and even more clever cross-references customization.
+- **`cleveref` package** and even more clever cross-references customization.
 
 # Installation
 
 1. Install `pandoc` and `python3` if you haven't.
 2. Install python package `panflute` and `pylatexenc` if you haven't:
-    ```bash
-    pip install panflute pylatexenc
-    ```
+```bash
+pip install panflute pylatexenc
+```
 3. Download the `pandoc-tex-numbering.py` and put it in your PATH or in the same directory as your LaTeX source file.
 
 # Usage
@@ -43,7 +43,7 @@ You can set the following variables in the metadata of your LaTeX file to custom
 ### Equations
 - `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
 
-### Cleveref Support
+### `cleveref` Support
 Currently, pandoc's default LaTeX reader does not support `\crefname` and `Crefname` commands (they are not visible in the AST for filters). To support cleveref package, you can set the following metadata:
 - `figure-prefix`: The prefix of the figure reference. Default is "Figure".
 - `table-prefix`: The prefix of the table reference. Default is "Table".
@@ -54,10 +54,10 @@ Currently, pandoc's default LaTeX reader does not support `\crefname` and `Crefn
 **Note: multiple references are not supported currently.** Try to use `Figures \ref{fig:1} and \ref{fig:2}` instead of `\cref{fig:1,fig:2}` for now.
 
 ### Custom Section Numbering Format
-For the section numbering, you can customize the format of the section numbering added at the beginning of the section titles and used in the references. The following metadata are used:
-- `section-format-source-1`, `section-format-source-2`,...: The format of the section numbering at each level. For more details, see the [Details of Sections](#sections) section. Default is `"{h1}"`, `"{h1}.{h2}"` etc.
-- `section-format-ref-1`, `section-format-ref-2`,...: The format of the section numbering used in the references. **If set, this will override the `section-prefix` metadata**. For more details, see the [Details of Sections](#sections) section. Default is `"{h1}"`, `"{h1}.{h2}"`, etc. combined with the `section-prefix` and `prefix-space` metadata.
-- `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `False`. If set to `True`, all non arabic section fields are also supported. For more details, see the [Details of Sections](#sections) section. **In that case, the `lang_num.py` file must also be included in the same directory as the filter.**
+For the section numbering, you can customize the format of the section numbering added at the beginning of the section titles and used in the references. The following metadata are used. For more details, see the [Details of Sections](#sections) section.
+- `section-format-source-1`, `section-format-source-2`,...: The format of the section numbering at each level. Default is `"{h1}"`, `"{h1}.{h2}"` etc.
+- `section-format-ref-1`, `section-format-ref-2`,...: The format of the section numbering used in the references. **If set, this will override the `section-prefix` metadata**. Default is `"{h1}"`, `"{h1}.{h2}"`, etc. combined with the `section-prefix` and `prefix-space` metadata.
+- `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `False`. If set to `True`, all non arabic section fields are also supported, and in this case, **the `lang_num.py` file must also be included in the same directory as the filter.**
 
 ### Caption Renaming
 The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables.
