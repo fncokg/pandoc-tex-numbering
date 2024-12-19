@@ -197,7 +197,10 @@ def find_labels_math(elem,doc):
 
 def find_labels_table(elem,doc):
     doc.pandoc_tex_numbering["current_tab"] += 1
-    label = elem.parent.identifier
+    if isinstance(elem.parent,Div) and "identifier" in elem.parent.attributes:
+        label = elem.parent.attributes["identifier"]
+    else:
+        label = elem.parent.identifier
     numbering = _current_eq_numbering(doc,"tab")
     doc.pandoc_tex_numbering["ref_dict"][label] = {
         "num": numbering,
