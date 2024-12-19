@@ -36,6 +36,9 @@ def prepare(doc):
 
         "fig_pref": doc.get_metadata("figure-prefix", "Figure"),
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
+        "eq_pref": doc.get_metadata("equation-prefix", "Equation"),
+        "sec_pref": doc.get_metadata("section-prefix", "Section"),
+
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
         "non_arabic_numbers": doc.get_metadata("non-arabic-numbers", False),
 
@@ -156,7 +159,11 @@ def find_labels_header(elem,doc):
         if isinstance(child,Span) and "label" in child.attributes:
             label = child.attributes["label"]
             numbering = _current_section(doc,level=elem.level)
-            doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+            doc.pandoc_tex_numbering["ref_dict"][label] = {
+                "num": numbering,
+                "level": elem.level,
+                "type": "sec"
+            }
     if doc.pandoc_tex_numbering["num_sec"]:
         # Find the first string in the header and add numbering to it
         # for child in elem.content:
@@ -171,7 +178,10 @@ def find_labels_math(elem,doc):
     modified_math_str,labels = parse_latex_math(math_str,doc)
     elem.text = modified_math_str
     for label,numbering in labels.items():
-        doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+        doc.pandoc_tex_numbering["ref_dict"][label] = {
+            "num": numbering,
+            "type": "eq"
+        }
     if labels:
         this_elem = elem
         while not isinstance(this_elem,Para):
@@ -186,18 +196,24 @@ def find_labels_table(elem,doc):
     doc.pandoc_tex_numbering["current_tab"] += 1
     label = elem.parent.identifier
     numbering = _current_eq_numbering(doc,"tab")
-    doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+    doc.pandoc_tex_numbering["ref_dict"][label] = {
+        "num": numbering,
+        "type": "tab"
+    }
     caption_plain: Plain = elem.caption.content[0]
-    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"])
+    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"].capitalize())
 
 def find_labels_figure(elem,doc):
     doc.pandoc_tex_numbering["current_fig"] += 1
     label = elem.identifier
     numbering = _current_eq_numbering(doc,"fig")
     if label:
-        doc.pandoc_tex_numbering["ref_dict"][label] = numbering
+        doc.pandoc_tex_numbering["ref_dict"][label] = {
+            "num": numbering,
+            "type": "fig"
+        }
     caption_plain: Plain = elem.caption.content[0]
-    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"])
+    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"].capitalize())
 
 def action_find_labels(elem, doc):
     # Find labels in headers, math blocks, figures and tables
@@ -212,10 +228,22 @@ def action_find_labels(elem, doc):
         find_labels_table(elem,doc)
 
 def action_replace_refs(elem, doc):
-    if isinstance(elem, Link) and 'reference-type' in elem.attributes and elem.attributes['reference-type'] == 'ref':
+    if isinstance(elem, Link) and 'reference-type' in elem.attributes:
         label = elem.attributes['reference']
         if label in doc.pandoc_tex_numbering["ref_dict"]:
-            elem.content[0].text = doc.pandoc_tex_numbering["ref_dict"][label]
+            numbering_info = doc.pandoc_tex_numbering["ref_dict"][label]
+            if elem.attributes['reference-type'] == 'ref':
+                elem.content[0].text = numbering_info["num"]
+            elif elem.attributes['reference-type'] == 'ref+label':
+                label_type = numbering_info["type"]
+                prefix = doc.pandoc_tex_numbering[f"{label_type}_pref"].lower()
+                elem.content[0].text = f"{prefix}{numbering_info['num']}"
+            elif elem.attributes['reference-type'] == 'ref+Label':
+                label_type = numbering_info["type"]
+                prefix = doc.pandoc_tex_numbering[f"{label_type}_pref"].capitalize()
+                elem.content[0].text = f"{prefix} {numbering_info['num']}"
+            else:
+                logger.warning(f"Unknown reference-type: {elem.attributes['reference-type']}")
         else:
             logger.warning(f"Reference not found: {label}")
 

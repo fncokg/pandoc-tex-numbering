@@ -3,14 +3,23 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{float}
+\usepackage{cleveref} % Added cleveref package
+\usepackage{longtable} % Added longtable package
+
+% Custom names for cref
+\crefname{equation}{equation}{equations}
+\crefname{figure}{figure}{figures}
+\crefname{table}{table}{tables}
+\crefname{section}{section}{sections}
 
 \title{pandoc-tex-numbering Test Document}
 \begin{document}
 \maketitle
 \section{Introduction}
-This document is created to test the pandoc numbering functions for equations, figures, and tables.
+This document is created to test the pandoc numbering functions for equations, figures, and tables. \Cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref) provide examples of equations, figures, and tables.
 
 \section{Equations}
+\label{sec:equations}
 \subsection{Multiline Equations}
 Here is a multiline equation using the \texttt{aligned} environment:
 \begin{equation}
@@ -35,11 +44,12 @@ Here is a single line equation:
 \end{equation}
 
 \subsection{References to Equations}
-Equation \ref{eq:quadratic} represents a quadratic function. Equation \ref{eq:align1} and \ref{eq:align2} are simple algebraic equations. Equation \ref{eq:einstein} is Einstein's mass-energy equivalence.
+\Cref{eq:quadratic} (cref) represents a quadratic function. Equation \ref{eq:align1} (ref) and \cref{eq:align2} (cref) are simple algebraic equations. \Cref{eq:einstein} (cref) is Einstein's mass-energy equivalence.
 
 \section{Figures and Tables}
+\label{sec:figures_tables}
 \subsection{Figures}
-Figure \ref{fig:example} shows an example image.
+\Cref{fig:example} (cref) shows an example image.
 
 \begin{figure}[H]
     \centering
@@ -49,7 +59,7 @@ Figure \ref{fig:example} shows an example image.
 \end{figure}
 
 \subsection{Tables}
-Table \ref{tab:example} shows an example table.
+\Cref{tab:example} (cref) shows an example table.
 
 \begin{table}[H]
     \centering
@@ -65,10 +75,40 @@ Table \ref{tab:example} shows an example table.
     \label{tab:example}
 \end{table}
 
+\subsection{Long Tables}
+\Cref{tab:longtable} (cref) shows an example of a long table.
+
+\begin{longtable}{|c|c|c|}
+    \caption{Example Long Table} \label{tab:longtable} \\
+    \hline
+    Column 1 & Column 2 & Column 3 \\
+    \hline
+    \endfirsthead
+    \multicolumn{3}{c}{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\
+    \hline
+    Column 1 & Column 2 & Column 3 \\
+    \hline
+    \endhead
+    \hline \multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+    \endfoot
+    \hline
+    \endlastfoot
+    Data 1 & Data 2 & Data 3 \\
+    Data 4 & Data 5 & Data 6 \\
+    Data 7 & Data 8 & Data 9 \\
+    Data 10 & Data 11 & Data 12 \\
+    Data 13 & Data 14 & Data 15 \\
+    Data 16 & Data 17 & Data 18 \\
+    Data 19 & Data 20 & Data 21 \\
+    Data 22 & Data 23 & Data 24 \\
+    Data 25 & Data 26 & Data 27 \\
+    Data 28 & Data 29 & Data 30 \\
+\end{longtable}
+
 \subsection{References to Figures and Tables}
-Figure \ref{fig:example} is an example image. Table \ref{tab:example} is an example table.
+\Cref{fig:example} (cref) is an example image. Table \ref{tab:example} (ref) is an example table. \Cref{tab:longtable} (cref) is an example of a long table.
 
 \section{Conclusion}
-This document includes examples of multiline equations, single line equations, figures, and tables with labels and references to test the pandoc numbering functions.
+This document includes examples of multiline equations, single line equations, figures, and tables with labels and references to test the pandoc numbering functions. For more details, see \cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref).
 
 \end{document}
