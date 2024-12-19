@@ -144,29 +144,30 @@ The results are shown as follows:
 
 ## Customized Metadata
 
-In the following example, we only want to set the prefix of figures and tables as "Fig" and "Tab" respectively and reset all the numbering at the second-level section. *Only for the purpose of demonstration*, we also want to use Chinese non-arabic numbers for the first level sections as "第一章" and English numbers for the second level sections as "Section 1.1.".
+In the following example, we custom the following (maybe silly) items *only for the purpose of demonstration*:
+- Use all prefixes as "Fig", "Tab", "Eq" respectively.
+- At the beginning of sections, use Chinese numbers "第一章" for the first level sections and English numbers "Section 1.1" for the second level sections.
+- When referred to, use, in turn, "Chapter 1", "第1.1节" etc.
 
 **In this case, please note that the `lang_num.py` file must be also included in the same directory as the filter.**
 
-Directly in the command line:
+Run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering.py -M figure-prefix="Fig" -M table-prefix="Tab" -M number-reset-level=2 -M non-arabic-numbers=true -M section-format-1="第{h1_zh}章" -M section-format-2="Section {h1}.{h2}." test.tex
-```
-
-Or run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
-
-```bash
-pandoc -o output.docx -F pandoc-tex-numbering.py --metadata-file metadata.yaml test.tex
+pandoc -o output.docx -F pandoc-tex-numbering.py --metadata-file test.yaml test.tex
 ```
 
 ```yaml
+# test.yaml
 figure-prefix: Fig
 table-prefix: Tab
+equation-prefix: Eq
 number-reset-level: 2
 non-arabic-numbers: true
-section-format-1: "第{h1_zh}章"
-section-format-2: "Section {h1}.{h2}."
+section-format-source-1: "第{h1_zh}章"
+section-format-source-2: "Section {h1}.{h2}."
+section-format-ref-1: "Chapter {h1}"
+section-format-ref-2: "第{h1}.{h2}节"
 ```
 
 The results are shown as follows:

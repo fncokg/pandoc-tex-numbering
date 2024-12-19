@@ -1,5 +1,7 @@
+# test.yaml
 figure-prefix: Fig
 table-prefix: Tab
+equation-prefix: Eq
 number-reset-level: 2
 non-arabic-numbers: true
 section-format-source-1: "第{h1_zh}章"
