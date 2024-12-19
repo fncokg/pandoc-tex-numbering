@@ -139,7 +139,7 @@ def parse_latex_math(math_str:str,doc):
     return _parse_plain_math(math_str,doc)
 
 
-def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str,space=True):
+def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str,space:bool=True):
     url = f"#{label}" if label else ""
     label_items = [
         Str(prefix_str),
@@ -148,7 +148,7 @@ def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str,
         Space()
     ]
     if space:
-        caption_plain.content.insert(1,Space())
+        label_items.insert(1,Space())
     for item in label_items[::-1]:
         caption_plain.content.insert(0, item)
 
@@ -168,11 +168,6 @@ def find_labels_header(elem,doc):
                 "type": "sec"
             }
     if doc.pandoc_tex_numbering["num_sec"]:
-        # Find the first string in the header and add numbering to it
-        # for child in elem.content:
-        #     if isinstance(child,Str):
-        #         child.text = doc.pandoc_tex_numbering["sec_num_formats"][elem.level](doc.pandoc_tex_numbering["current_sec"]) + child.text
-        #         break
         elem.content.insert(0,Space())
         elem.content.insert(0,Str(doc.pandoc_tex_numbering["sec_num_formats"][elem.level](doc.pandoc_tex_numbering["current_sec"])))
 
@@ -197,15 +192,17 @@ def find_labels_math(elem,doc):
 
 def find_labels_table(elem,doc):
     doc.pandoc_tex_numbering["current_tab"] += 1
-    if isinstance(elem.parent,Div) and "identifier" in elem.parent.attributes:
-        label = elem.parent.attributes["identifier"]
-    else:
+    # The label of a table will be added to a div element wrapping the table, if any. And if there is not, the div element will be not created.
+    if isinstance(elem.parent,Div):
         label = elem.parent.identifier
+    else:
+        label = ""
     numbering = _current_eq_numbering(doc,"tab")
-    doc.pandoc_tex_numbering["ref_dict"][label] = {
-        "num": numbering,
-        "type": "tab"
-    }
+    if label:
+        doc.pandoc_tex_numbering["ref_dict"][label] = {
+            "num": numbering,
+            "type": "tab"
+        }
     caption_plain: Plain = elem.caption.content[0]
     add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
 

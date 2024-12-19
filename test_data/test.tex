@@ -76,12 +76,22 @@ Here is a single line equation:
     \label{tab:example}
 \end{table}
 
-\subsection{Long Tables}
-\Cref{tab:longtable} (cref) shows an example of a long table.
-\include{tab2include}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Column 1 & Column 2 & Column 3 \\
+        \hline
+        Data 1 & Data 2 & Data 3 \\
+        Data 4 & Data 5 & Data 6 \\
+        \hline
+    \end{tabular}
+    \caption{Example Table without Label}
+    % \label{tab:example}
+\end{table}
 
 \subsection{References to Figures and Tables}
-\Cref{fig:example} (cref) is an example image. Table \ref{tab:example} (ref) is an example table. \Cref{tab:longtable} (cref) is an example of a long table.
+\Cref{fig:example} (cref) is an example image. Table \ref{tab:example} (ref) is an example table. 
 
 \section{Conclusion}
 This document includes examples of multiline equations, single line equations, figures, and tables with labels and references to test the pandoc numbering functions. For more details, see \cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref).
