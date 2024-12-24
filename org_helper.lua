@@ -1,4 +1,4 @@
-function RawBlcok (elem)
+function RawBlock (elem)
   if elem.format == "latex" then
     local res = pandoc.read(elem.text, "latex")
     return pandoc.Div(res.blocks)
