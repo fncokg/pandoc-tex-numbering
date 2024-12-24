@@ -20,6 +20,6 @@ $$
 a=2
 $$
 
-This is equation \ref{eq:1}
+This is equation \ref{eq:1} and eqref:eq:1
 
 and this is equation \ref{eq:2}

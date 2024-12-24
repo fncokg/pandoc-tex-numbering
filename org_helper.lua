@@ -15,3 +15,12 @@ function RawInline (elem)
     return elem
   end
 end
+
+function Str (elem)
+  local text,count = string.gsub(elem.text, "eqref:(.*)", "\\ref{%1}")
+  if count > 0 then
+    return pandoc.read(text, "latex").blocks[1].content[1]
+  else
+    return elem
+  end
+end
