@@ -123,10 +123,14 @@ def finalize(doc):
 def _current_section(doc,level=1):
     return ".".join(map(str,doc.pandoc_tex_numbering["current_sec"][:level]))
 
-def _current_eq_numbering(doc,item="eq"):
-    chp = _current_section(doc,level=doc.pandoc_tex_numbering["num_reset_level"])
-    eq = doc.pandoc_tex_numbering[f"current_{item}"]
-    return f"{chp}.{eq}"
+def _current_numbering(doc,item="eq"):
+    reset_level = doc.pandoc_tex_numbering["num_reset_level"]
+    num = doc.pandoc_tex_numbering[f"current_{item}"]
+    if reset_level == 0:
+        return str(num)
+    else:
+        sec = _current_section(doc,level=doc.pandoc_tex_numbering["num_reset_level"])
+        return f"{sec}.{num}"
 
 
 def _parse_multiline_environment(root_node,doc):
@@ -134,7 +138,7 @@ def _parse_multiline_environment(root_node,doc):
     environment_body = ""
     # Multiple equations
     doc.pandoc_tex_numbering["current_eq"] += 1
-    current_numbering = _current_eq_numbering(doc,"eq")
+    current_numbering = _current_numbering(doc,"eq")
     for node in root_node.nodelist:
         if isinstance(node,LatexMacroNode):
             if node.macroname == "label":
@@ -143,7 +147,7 @@ def _parse_multiline_environment(root_node,doc):
             if node.macroname == "\\":
                 environment_body += f"\\qquad{{({current_numbering})}}"
                 doc.pandoc_tex_numbering["current_eq"] += 1
-                current_numbering = _current_eq_numbering(doc,"eq")
+                current_numbering = _current_numbering(doc,"eq")
         environment_body += node.latex_verbatim()
     environment_body += f"\\qquad{{({current_numbering})}}"
     modified_math_str = f"\\begin{{{root_node.environmentname}}}{environment_body}\\end{{{root_node.environmentname}}}"
@@ -152,7 +156,7 @@ def _parse_multiline_environment(root_node,doc):
 def _parse_plain_math(math_str:str,doc):
     labels = {}
     doc.pandoc_tex_numbering["current_eq"] += 1
-    current_numbering = _current_eq_numbering(doc,"eq")
+    current_numbering = _current_numbering(doc,"eq")
     modified_math_str = f"{math_str}\\qquad{{({current_numbering})}}"
     label_strings = re.findall(r"\\label\{(.*?)\}",math_str)
     if len(label_strings) >= 2:
@@ -247,7 +251,7 @@ def find_labels_math(elem,doc):
 def find_labels_table(elem,doc):
     doc.pandoc_tex_numbering["current_tab"] += 1
     # The label of a table will be added to a div element wrapping the table, if any. And if there is not, the div element will be not created.
-    numbering = _current_eq_numbering(doc,"tab")
+    numbering = _current_numbering(doc,"tab")
     if isinstance(elem.parent,Div):
         label = elem.parent.identifier
         if not label and doc.pandoc_tex_numbering["auto_labelling"]:
@@ -272,7 +276,7 @@ def find_labels_table(elem,doc):
 def find_labels_figure(elem,doc):
     doc.pandoc_tex_numbering["current_fig"] += 1
     label = elem.identifier
-    numbering = _current_eq_numbering(doc,"fig")
+    numbering = _current_numbering(doc,"fig")
     if not label and doc.pandoc_tex_numbering["auto_labelling"]:
         label = f"fig:{numbering}"
         elem.identifier = label
