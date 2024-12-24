@@ -46,7 +46,7 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
 
 ### `cleveref` Support
-Currently, pandoc's default LaTeX reader does not support `\crefname` and `Crefname` commands (they are not visible in the AST for filters). To support cleveref package, you can set the following metadata:
+Currently, pandoc's default LaTeX reader does not support `\crefname` and `\Crefname` commands (they are not visible in the AST for filters). To support cleveref package, you can set the following metadata:
 - `figure-prefix`: The prefix of the figure reference. Default is "Figure".
 - `table-prefix`: The prefix of the table reference. Default is "Table".
 - `equation-prefix`: The prefix of the equation reference. Default is "Equation".
@@ -212,9 +212,14 @@ The logical structure of the filter is quiet straightforward. You can see this f
 
 It is recommended to decalre all your possible variables in the `prepare` function, and save them in the `doc.pandoc_tex_numbering:dict` object. This object will be automatically destroyed after the filter is executed.
 
+# FAQ
+
+- **Q**: Can the filter work with xxx packages? 
+- **A**: It depends. If the package is supported by pandoc, then it should work. If not, you may need to a custom filter or reader to parse the LaTeX codes correctly. In the latter case, this is out of the scope of this filter. For example, the macro `\ce` in the `mhchem` package is not supported by pandoc, so we cannot parse the chemical equations correctly.
+
 # TODO
 
 There are some known issues and possible improvements:
 - [ ] Support multiple references in `cleveref` package.
-- [ ] Add empty cpation for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
+- [ ] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
 - [ ] Support `align*` and other non-numbered environments.
