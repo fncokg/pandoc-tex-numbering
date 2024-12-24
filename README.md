@@ -228,10 +228,18 @@ It is recommended to decalre all your possible variables in the `prepare` functi
 
 - **Q**: Can the filter work with xxx package? 
 - **A**: It depends. If the package is supported by pandoc, then it should work. If not, you may need to a custom filter or reader to parse the LaTeX codes correctly. In the latter case, this is out of the scope of this filter. For example, the macro `\ce` in the `mhchem` package is not supported by pandoc, so we cannot parse the chemical equations correctly.
+- **Q**: Can the filter support complex caption macros such as `\bicaption`?
+- **A**: No for now. Caption macros such as `\bicaption` are not supported by the default `latex` reader of pandoc. Therefore, we cannot parse them correctly. You may need a custom reader to parse them correctly or modify the source code before using this filter.
+- **Q**: Can `docx` output support the short captions in the list of figures and tables?
+- **A**: No for now. Although short captions can be correctly parsed by the pandoc `latex` reader, they are not supported by the `docx` writer. In fact, there's no elegant way to support short captions in lists of figures/tables in `docx` output. This is because list of figures or tables is implemented via the field `TOC` in `docx`, which only supports full captions. Style separators may be useful but (1) they are not supported by pandoc's `docx` writer and (2) they require that short captions must be part of the full captions, which is usually not the case.
+
+For people DO need `bicaption`s, short captions etc. in a `docx` output and **familiar with python programming**, I'll recommend to take a look at the [latex2docx-framework](https://github.com/fncokg/latex2docx-framework) project I'm working on. In this project, I provided a more flexible way to convert LaTeX source codes to `docx` files based on and beyond the `pandoc` framework. You can programmatically modify the LaTeX source codes before the conversion and modify the `docx` output after the conversion in a simple way. By this way, problems like `bicaption`s can be solved by a simple regular expression replacement before the conversion and problems like list of figures/tables with short captions can be sloved by a manual (of course, manual in a programmatic way) field codes insertion cooperating with data exported by this filter after the conversion.
+
+That said, however, functionalities mentioned above can never be supported easily since they are not, and maybe never will be, supported by native `pandoc` framework.
 
 # TODO
 
 There are some known issues and possible improvements:
 - [ ] Support multiple references in `cleveref` package.
-- [ ] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
+- [x] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
 - [ ] Support `align*` and other non-numbered environments.
