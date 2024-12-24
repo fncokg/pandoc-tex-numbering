@@ -36,11 +36,13 @@ Note 2: By default, the filter will number the sections, figures, tables, and eq
 You can set the following variables in the metadata of your LaTeX file to customize the behavior of the filter:
 
 ### General
-- `number-figures`: Whether to number the figures. Default is `True`.
-- `number-tables`: Whether to number the tables. Default is `True`.
-- `number-equations`: Whether to number the equations. Default is `True`.
-- `number-sections`: Whether to number the sections. Default is `True`.
+- `number-figures`: Whether to number the figures. Default is `true`.
+- `number-tables`: Whether to number the tables. Default is `true`.
+- `number-equations`: Whether to number the equations. Default is `true`.
+- `number-sections`: Whether to number the sections. Default is `true`.
 - `number-reset-level`: The level of the section that will reset the numbering. Default is 1. For example, if the value is 2, the numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
+- `data-export-path`: Where to export the filter data. Default is `None`, which means no data will be exported. If set, the data will be exported to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter-debugging.
+- `auto-labelling`: Whether to automatically add identifiers (labels) to figures and tables without labels. Default is `true`. This has no effect on the output appearance but can be useful for cross-referencing in the future (for example, in the `.docx` output this will ensure that all your figures and tables have a unique auto-generated bookmark).
 
 ### Equations
 - `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
@@ -51,7 +53,7 @@ Currently, pandoc's default LaTeX reader does not support `\crefname` and `\Cref
 - `table-prefix`: The prefix of the table reference. Default is "Table".
 - `equation-prefix`: The prefix of the equation reference. Default is "Equation".
 - `section-prefix`: The prefix of the section reference. Default is "Section".
-- `prefix-space`: Whether to add a space between the prefix and the number. Default is `True` (for some languages, the space may not be needed).
+- `prefix-space`: Whether to add a space between the prefix and the number. Default is `true` (for some languages, the space may not be needed).
 
 **Note: multiple references are not supported currently.** Try to use `Figures \ref{fig:1} and \ref{fig:2}` instead of `\cref{fig:1,fig:2}` for now.
 
@@ -59,7 +61,7 @@ Currently, pandoc's default LaTeX reader does not support `\crefname` and `\Cref
 For the section numbering, you can customize the format of the section numbering added at the beginning of the section titles and used in the references. The following metadata are used. For more details, see the [Details of Sections](#sections) section.
 - `section-format-source-1`, `section-format-source-2`,...: The format of the section numbering at each level. Default is `"{h1}"`, `"{h1}.{h2}"` etc.
 - `section-format-ref-1`, `section-format-ref-2`,...: The format of the section numbering used in the references. **If set, this will override the `section-prefix` metadata**. Default is `"{h1}"`, `"{h1}.{h2}"`, etc. combined with the `section-prefix` and `prefix-space` metadata.
-- `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `False`. If set to `True`, all non arabic section fields are also supported, and in this case, **the `lang_num.py` file must also be included in the same directory as the filter.**
+- `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `false`. If set to `true`, all non arabic section fields are also supported, and in this case, **the `lang_num.py` file must also be included in the same directory as the filter.**
 
 ### Caption Renaming
 The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables.
@@ -82,7 +84,7 @@ Related discussions can also be found in [pandoc issue #1764](https://github.com
 
 ## Equations
 
-If metadata `number-equations` is set to `True`, all the equations will be numbered. The numbers are added at the end of the equations and the references to the equations are replaced by their numbers.
+If metadata `number-equations` is set to `true`, all the equations will be numbered. The numbers are added at the end of the equations and the references to the equations are replaced by their numbers.
 
 Equations under multiline environments (specified by metadata `multiline-environments` ) such as `align`, `cases` etc. are numbered line by line, and the others are numbered as a whole block.
 
@@ -115,7 +117,7 @@ This equation will be numbered line by line, say, (1.2) and (1.3)
 
 ## Sections
 
-If metadata `number-sections` is set to `True`, all the sections will be numbered. The numbers are added at the beginning of the section titles and the references to the sections are replaced by their numbers.
+If metadata `number-sections` is set to `true`, all the sections will be numbered. The numbers are added at the beginning of the section titles and the references to the sections are replaced by their numbers.
 
 You can customize the format of the section numbering added at the beginning of the section titles and used in the references by setting the metadata `section-format-source-1`, `section-format-source-2`, etc. and `section-format-ref-1`, `section-format-ref-2`, etc. All of these metadata accept a python f-string format with fields `h1`, `h2`, ..., `h10` representing the numbers of each level headers. 
 
@@ -125,7 +127,7 @@ The default values of `section-format-source-1`, `section-format-source-2`, etc.
 
 Sometimes, non arabic numberings are needed. For example, in Chinese, with `section-format-source-1="第{h1}章"`, the users get "第1章", "第2章" etc. However, sometimes the users may need "第一章", "第二章" etc. To achieve this, we also support non arabic numbers by series of non-arabic fields. For example, when `{h1}` is 12, the Chinese number field `{h1_zh}` will be "十二". To enable this feature, you need to:
 
-- set `non-arabic-numbers` to `True` in the metadata.
+- set `non-arabic-numbers` to `true` in the metadata.
 - include the `lang_num.py` file in the same directory as the filter.
 - set `section-format-source-1="第{h1_zh}章"` and `section-format-ref-1="第{h1_zh}章"` in the metadata.
 
@@ -138,6 +140,16 @@ Note that:
 All the figures and tables are supported. All references to figures and tables are replaced by their numbers, and all the captions are added prefixs such as "Figure 1.1: ".
 
 You can determine the prefix of figures and tables by changing the variables `figure-prefix` and `table-prefix` in the metadata, default values are "Figure" and "Table" respectively.
+
+All figures and captions without captions will be also added a caption like "Figure 1.1" or "Table 1.1" (without the colon).
+
+## Data Export
+
+If you set the metadata `data-export-path` to a path, the filter will export the filter data to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter debugging. The output data is a dictionary with identifiers (labels) as keys and the corresponding data as values.
+
+All kinds of identifiers have the following common keys: `num: str` and `type: Literal["fig", "tab", "eq", "sec"]`. For sections, there is an additional key `level: int` representing the level of the section. For tables and figures, there is additional keys `caption: str` and `short_caption: str` representing the full caption and the short caption defined in the LaTeX source code.
+
+Note: currently, short captions defined via `\caption[short caption]{full caption}` are not supported for `docx` output, but the filter will export them for your further usage.
 
 ## Log
 

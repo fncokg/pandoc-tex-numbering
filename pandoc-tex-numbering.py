@@ -50,7 +50,7 @@ def prepare(doc):
         "num_sec": doc.get_metadata("number-sections", True),
         "num_reset_level": int(doc.get_metadata("number-reset-level", 1)),
 
-        "filter_data_path": doc.get_metadata("filter-data-path", None),
+        "data_export_path": doc.get_metadata("data-export-path", None),
 
         "fig_pref": doc.get_metadata("figure-prefix", "Figure"),
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
@@ -58,7 +58,7 @@ def prepare(doc):
         "sec_pref": doc.get_metadata("section-prefix", "Section"),
         "pref_space": doc.get_metadata("prefix-space", True),
 
-        "auto_labelling": doc.get_metadata("auto-labelling", False),
+        "auto_labelling": doc.get_metadata("auto-labelling", True),
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
         "non_arabic_numbers": doc.get_metadata("non-arabic-numbers", False),
@@ -115,8 +115,8 @@ def finalize(doc):
             del parent.content[idx]
             div = Div(tab,identifier=label)
             parent.content.insert(idx,div)
-    if doc.pandoc_tex_numbering["filter_data_path"]:
-        with open(doc.pandoc_tex_numbering["filter_data_path"],"w") as f:
+    if doc.pandoc_tex_numbering["data_export_path"]:
+        with open(doc.pandoc_tex_numbering["data_export_path"],"w") as f:
             json.dump(doc.pandoc_tex_numbering["ref_dict"],f,indent=2)
     del doc.pandoc_tex_numbering
 
