@@ -214,7 +214,7 @@ It is recommended to decalre all your possible variables in the `prepare` functi
 
 # FAQ
 
-- **Q**: Can the filter work with xxx packages? 
+- **Q**: Can the filter work with xxx package? 
 - **A**: It depends. If the package is supported by pandoc, then it should work. If not, you may need to a custom filter or reader to parse the LaTeX codes correctly. In the latter case, this is out of the scope of this filter. For example, the macro `\ce` in the `mhchem` package is not supported by pandoc, so we cannot parse the chemical equations correctly.
 
 # TODO

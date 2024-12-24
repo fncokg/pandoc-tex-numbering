@@ -1,5 +1,7 @@
 import logging
 import re
+import json
+from typing import Union
 
 from panflute import *
 from pylatexenc.latexwalker import LatexWalker,LatexEnvironmentNode,LatexMacroNode
@@ -12,6 +14,20 @@ logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
 MAX_LEVEL = 10
+
+def to_string(elem):
+    if isinstance(elem,Str):
+        return elem.text
+    elif isinstance(elem,Space):
+        return " "
+    elif isinstance(elem,(LineBreak,SoftBreak)):
+        return "\n"
+    elif isinstance(elem,ListContainer):
+        return "".join([to_string(item) for item in elem])
+    elif hasattr(elem,"content"):
+        return "".join([to_string(item) for item in elem.content])
+    else:
+        return ""
 
 def number_fields(numbers,max_levels,non_arabic_numbers=False):
     if non_arabic_numbers:
@@ -34,11 +50,15 @@ def prepare(doc):
         "num_sec": doc.get_metadata("number-sections", True),
         "num_reset_level": int(doc.get_metadata("number-reset-level", 1)),
 
+        "filter_data_path": doc.get_metadata("filter-data-path", None),
+
         "fig_pref": doc.get_metadata("figure-prefix", "Figure"),
         "tab_pref": doc.get_metadata("table-prefix", "Table"),
         "eq_pref": doc.get_metadata("equation-prefix", "Equation"),
         "sec_pref": doc.get_metadata("section-prefix", "Section"),
         "pref_space": doc.get_metadata("prefix-space", True),
+
+        "auto_labelling": doc.get_metadata("auto-labelling", False),
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
         "non_arabic_numbers": doc.get_metadata("non-arabic-numbers", False),
@@ -49,7 +69,8 @@ def prepare(doc):
         "current_eq": 0,
         "current_fig": 0,
         "current_tab": 0,
-        "paras2wrap": []
+        "paras2wrap": [],
+        "tabs2wrap": [],
     }
 
     # Initialize the section numbering formats
@@ -87,6 +108,16 @@ def finalize(doc):
             for label in labels[1:]:
                 div = Div(div,identifier=label)
             parent.content.insert(idx,div)
+    for tab,label in doc.pandoc_tex_numbering["tabs2wrap"]:
+        if label:
+            parent = tab.parent
+            idx = parent.content.index(tab)
+            del parent.content[idx]
+            div = Div(tab,identifier=label)
+            parent.content.insert(idx,div)
+    if doc.pandoc_tex_numbering["filter_data_path"]:
+        with open(doc.pandoc_tex_numbering["filter_data_path"],"w") as f:
+            json.dump(doc.pandoc_tex_numbering["ref_dict"],f,indent=2)
     del doc.pandoc_tex_numbering
 
 def _current_section(doc,level=1):
@@ -149,18 +180,31 @@ def parse_latex_math(math_str:str,doc):
     return _parse_plain_math(math_str,doc)
 
 
-def add_label_to_caption(numbering,label:str,caption_plain:Plain,prefix_str:str,space:bool=True):
+def add_label_to_caption(numbering,label:str,elem:Union[Figure,Table],prefix_str:str,space:bool=True):
     url = f"#{label}" if label else ""
     label_items = [
         Str(prefix_str),
         Link(Str(numbering), url=url),
-        Str(":"),
-        Space()
     ]
+    has_caption = True
+    if not elem.caption:
+        elem.caption = Caption(Plain(Str("")),short_caption=ListContainer([Str("")]))
+        has_caption = False
+    if not elem.caption.content:
+        elem.caption.content = [Plain(Str(""))]
+        has_caption = False
+    if has_caption:
+        # If there's no caption text, we shouldnot add a colon
+        label_items.extend([
+            Str(":"),
+            Space()
+        ])
+        
     if space:
         label_items.insert(1,Space())
     for item in label_items[::-1]:
-        caption_plain.content.insert(0, item)
+        elem.caption.content[0].content.insert(0, item)
+
 
 def find_labels_header(elem,doc):
     doc.pandoc_tex_numbering["current_sec"][elem.level-1] += 1
@@ -203,31 +247,44 @@ def find_labels_math(elem,doc):
 def find_labels_table(elem,doc):
     doc.pandoc_tex_numbering["current_tab"] += 1
     # The label of a table will be added to a div element wrapping the table, if any. And if there is not, the div element will be not created.
+    numbering = _current_eq_numbering(doc,"tab")
     if isinstance(elem.parent,Div):
         label = elem.parent.identifier
+        if not label and doc.pandoc_tex_numbering["auto_labelling"]:
+            label = f"tab:{numbering}"
+            elem.parent.identifier = label
     else:
-        label = ""
-    numbering = _current_eq_numbering(doc,"tab")
+        if doc.pandoc_tex_numbering["auto_labelling"]:
+            label = f"tab:{numbering}"
+            doc.pandoc_tex_numbering["tabs2wrap"].append([elem,label])
+        else:
+            label = ""
+    
+    add_label_to_caption(numbering,label,elem,doc.pandoc_tex_numbering["tab_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
     if label:
         doc.pandoc_tex_numbering["ref_dict"][label] = {
             "num": numbering,
-            "type": "tab"
+            "type": "tab",
+            "caption": to_string(elem.caption),
+            "short_caption": to_string(elem.caption.short_caption)
         }
-    caption_plain: Plain = elem.caption.content[0]
-    add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["tab_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
 
 def find_labels_figure(elem,doc):
     doc.pandoc_tex_numbering["current_fig"] += 1
     label = elem.identifier
     numbering = _current_eq_numbering(doc,"fig")
+    if not label and doc.pandoc_tex_numbering["auto_labelling"]:
+        label = f"fig:{numbering}"
+        elem.identifier = label
+    
+    add_label_to_caption(numbering,label,elem,doc.pandoc_tex_numbering["fig_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
     if label:
         doc.pandoc_tex_numbering["ref_dict"][label] = {
             "num": numbering,
-            "type": "fig"
+            "type": "fig",
+            "caption": to_string(elem.caption),
+            "short_caption": to_string(elem.caption.short_caption)
         }
-    if elem.caption:
-        caption_plain: Plain = elem.caption.content[0]
-        add_label_to_caption(numbering,label,caption_plain,doc.pandoc_tex_numbering["fig_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
 
 def action_find_labels(elem, doc):
     # Find labels in headers, math blocks, figures and tables
