@@ -27,7 +27,9 @@ Take `.docx` as an example:
 pandoc --filter pandoc-tex-numbering.py input.tex -o output.docx
 ```
 
-Note: By default, the filter will number the sections, figures, tables, and equations. In case you only want to number some of them (for example in case you want to number only equations with this filter while number others with other filters), you can set the corresponding variables in the metadata of your LaTeX file. See the [Customization](#customization) section for more details.
+Note 1: (*skip this if you are working on `.tex` files*) The filter is designed for LaTeX files but, technically, it can also work with any LaTeX-like documents as long as `pandoc` is able to parse them in a LaTeX-like AST. For example, it can work with `.org` files with the help of an additional lua filter `org_helper.lua`. See the [org file support](#org-file-support) section for more details.
+
+Note 2: By default, the filter will number the sections, figures, tables, and equations. In case you only want to number some of them (for example in case you want to number only equations with this filter while number others with other filters), you can set the corresponding variables in the metadata of your LaTeX file. See the [Customization](#customization) section for more details.
 
 ## Customization
 
@@ -61,6 +63,20 @@ For the section numbering, you can customize the format of the section numbering
 
 ### Caption Renaming
 The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables.
+
+## `org` file support
+
+`org` files are supported by adding an additional lua filter `org_helper.lua` to the pandoc command. The usage is as follows:
+
+```bash
+pandoc --lua-filter org_helper.lua --filter pandoc-tex-numbering.py input.org -o output.docx
+```
+
+**Be sure to use `--lua-filter org_helper.lua` before `--filter pandoc-tex-numbering.py`**.
+
+Reason for this is the default `org` reader of `pandoc` does not parse LaTeX codes by default, for example, LaTeX equations in `equation` environments and cross references via `\ref{}` macros are parsed as `RawBlock` and `RawInline` nodes, while we desire `Math` nodes and `Link` nodes respectively. The `org_helper.lua` filter helps read these blocks via `latex` reader and after that, the `pandoc-tex-numbering.py` filter can work as expected.
+
+Related discussions can also be found in [pandoc issue #1764](https://github.com/jgm/pandoc/issues/1764) (codes in `org_helper.lua` are based on comments from @tarleb in this issue) and [pandoc-tex-numbering issue #1](https://github.com/fncokg/pandoc-tex-numbering/issues/1).
 
 # Details
 
