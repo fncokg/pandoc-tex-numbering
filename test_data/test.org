@@ -1,0 +1,25 @@
+#+TITLE: Test
+#+PANDOC_OPTIONS: number-sections:t
+#+PANDOC_OPTIONS: toc:t
+#+PANDOC_OPTIONS: citeproc:t
+#+PANDOC_OPTIONS: filter:pandoc-tex-numbering
+#+PANDOC_METADATA: number-sections:False
+#+PANDOC_METADATA: equation-prefix:Eq
+
+
+* First section
+
+$$
+\label{eq:1}
+\sqrt{2}
+$$
+
+
+$$
+\label{eq:2}
+a=2
+$$
+
+This is equation \ref{eq:1}
+
+and this is equation \ref{eq:2}
