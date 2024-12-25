@@ -325,12 +325,15 @@ def action_replace_refs(elem, doc):
             label = labels[0]
             if label in doc.pandoc_tex_numbering["ref_dict"]:
                 numbering_info = doc.pandoc_tex_numbering["ref_dict"][label]
-                if elem.attributes['reference-type'] == 'ref':
+                ref_type = elem.attributes['reference-type']
+                if ref_type == 'ref':
                     elem.content[0].text = numbering_info["num"]
-                elif elem.attributes['reference-type'] == 'ref+label':
+                elif ref_type == 'ref+label':
                     elem.content[0].text = cleveref_numbering(numbering_info,doc,capitalize=False)
-                elif elem.attributes['reference-type'] == 'ref+Label':
+                elif ref_type == 'ref+Label':
                     elem.content[0].text = cleveref_numbering(numbering_info,doc,capitalize=True)
+                elif ref_type == 'eqref':
+                    elem.content[0].text = f"({numbering_info['num']})"
                 else:
                     logger.warning(f"Unknown reference-type: {elem.attributes['reference-type']}")
             else:
