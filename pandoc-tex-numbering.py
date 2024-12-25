@@ -99,8 +99,14 @@ def prepare(doc):
     )
 
 def finalize(doc):
+    processed_paras = []
+    processed_labels = []
     for para,labels in doc.pandoc_tex_numbering["paras2wrap"]:
         if labels:
+            if para in processed_paras:
+                labels_conflict = processed_labels[processed_paras.index(para)]
+                logger.warning(f"Paragraph {para} has been processed before. The labels {labels} conflict with {labels_conflict}.")
+                continue
             try:
                 parent = para.parent
                 idx = parent.content.index(para)
@@ -109,6 +115,8 @@ def finalize(doc):
                 for label in labels[1:]:
                     div = Div(div,identifier=label)
                 parent.content.insert(idx,div)
+                processed_paras.append(para)
+                processed_labels.append(labels)
             except Exception as e:
                 logger.warning(f"Failed to add identifier to paragraph because of {e}. Pleas check: \n The paragraph: {para}. Parent of the paragraph: {parent}")
     for tab,label in doc.pandoc_tex_numbering["tabs2wrap"]:
