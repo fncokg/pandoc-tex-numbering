@@ -101,13 +101,16 @@ def prepare(doc):
 def finalize(doc):
     for para,labels in doc.pandoc_tex_numbering["paras2wrap"]:
         if labels:
-            parent = para.parent
-            idx = parent.content.index(para)
-            del parent.content[idx]
-            div = Div(para,identifier=labels[0])
-            for label in labels[1:]:
-                div = Div(div,identifier=label)
-            parent.content.insert(idx,div)
+            try:
+                parent = para.parent
+                idx = parent.content.index(para)
+                del parent.content[idx]
+                div = Div(para,identifier=labels[0])
+                for label in labels[1:]:
+                    div = Div(div,identifier=label)
+                parent.content.insert(idx,div)
+            except Exception as e:
+                logger.warning(f"Failed to add identifier to paragraph because of {e}. Pleas check: \n The paragraph: {para}. Parent of the paragraph: {parent}")
     for tab,label in doc.pandoc_tex_numbering["tabs2wrap"]:
         if label:
             parent = tab.parent
