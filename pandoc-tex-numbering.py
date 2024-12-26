@@ -69,7 +69,10 @@ def prepare(doc):
         "current_eq": 0,
         "current_fig": 0,
         "current_tab": 0,
-        "paras2wrap": [],
+        "paras2wrap": {
+            "paras": [],
+            "labels": []
+        },
         "tabs2wrap": [],
     }
 
@@ -99,14 +102,11 @@ def prepare(doc):
     )
 
 def finalize(doc):
-    processed_paras = []
-    processed_labels = []
-    for para,labels in doc.pandoc_tex_numbering["paras2wrap"]:
+    paras2wrap = doc.pandoc_tex_numbering["paras2wrap"]
+    paras,labels_list = paras2wrap["paras"],paras2wrap["labels"]
+    assert len(paras) == len(labels_list)
+    for para,labels in zip(paras,labels_list):
         if labels:
-            if para in processed_paras:
-                labels_conflict = processed_labels[processed_paras.index(para)]
-                logger.warning(f"Paragraph {para} has been processed before. The labels {labels} conflict with {labels_conflict}.")
-                continue
             try:
                 parent = para.parent
                 idx = parent.content.index(para)
@@ -115,8 +115,6 @@ def finalize(doc):
                 for label in labels[1:]:
                     div = Div(div,identifier=label)
                 parent.content.insert(idx,div)
-                processed_paras.append(para)
-                processed_labels.append(labels)
             except Exception as e:
                 logger.warning(f"Failed to add identifier to paragraph because of {e}. Pleas check: \n The paragraph: {para}. Parent of the paragraph: {parent}")
     for tab,label in doc.pandoc_tex_numbering["tabs2wrap"]:
@@ -257,7 +255,12 @@ def find_labels_math(elem,doc):
                 logger.warning(f"Unexpected parent of math block: {this_elem}")
                 break
         else:
-            doc.pandoc_tex_numbering["paras2wrap"].append([this_elem,list(labels.keys())])
+            if not this_elem in doc.pandoc_tex_numbering["paras2wrap"]["paras"]:
+                doc.pandoc_tex_numbering["paras2wrap"]["paras"].append(this_elem)
+                doc.pandoc_tex_numbering["paras2wrap"]["labels"].append(list(labels.keys()))
+            else:
+                idx = doc.pandoc_tex_numbering["paras2wrap"]["paras"].index(this_elem)
+                doc.pandoc_tex_numbering["paras2wrap"]["labels"][idx].extend(labels.keys())
 
 def find_labels_table(elem,doc):
     doc.pandoc_tex_numbering["current_tab"] += 1
