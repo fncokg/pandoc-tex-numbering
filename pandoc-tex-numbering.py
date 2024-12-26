@@ -151,7 +151,10 @@ def _parse_multiline_environment(root_node,doc):
     for node in root_node.nodelist:
         if isinstance(node,LatexMacroNode):
             if node.macroname == "label":
-                label = node.nodeargd.argnlist[0].nodelist[0].chars
+                # If the label contains special characters, the argument will be parsed into multiple nodes. Therefore we get the label from the raw latex string rather than the parsed node.
+                # label = node.nodeargd.argnlist[0].nodelist[0].chars
+                arg1 = node.nodeargd.argnlist[0]
+                label = arg1.latex_verbatim()[1:-1]
                 labels[label] = current_numbering
             if node.macroname == "\\":
                 environment_body += f"\\qquad{{({current_numbering})}}"
