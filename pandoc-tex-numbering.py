@@ -1,6 +1,7 @@
 import logging
 import re
 import json
+import string
 from typing import Union
 
 from panflute import *
@@ -58,6 +59,8 @@ def prepare(doc):
         "sec_pref": doc.get_metadata("section-prefix", "Section"),
         "pref_space": doc.get_metadata("prefix-space", True),
 
+        "subfig_symbols": list(doc.get_metadata("subfigure-symbols", string.ascii_lowercase)),
+
         "auto_labelling": doc.get_metadata("auto-labelling", True),
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
@@ -68,6 +71,8 @@ def prepare(doc):
         "current_sec": [0]*MAX_LEVEL,
         "current_eq": 0,
         "current_fig": 0,
+        "current_subfig": 0,
+        
         "current_tab": 0,
         "paras2wrap": {
             "paras": [],
@@ -95,6 +100,9 @@ def prepare(doc):
         )
     doc.pandoc_tex_numbering["sec_format_source"] = section_formats_source
     doc.pandoc_tex_numbering["sec_format_ref"] = section_fromats_ref
+
+    subfig_format_string = doc.get_metadata("subfigure-format", "({sym})")
+    doc.pandoc_tex_numbering["subfig_format"] = lambda num,fmt=subfig_format_string: fmt.format(num=num,sym=doc.pandoc_tex_numbering["subfig_symbols"][num-1])
     
     # Prepare the multiline environment filter pattern for fast checking
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
@@ -132,14 +140,17 @@ def finalize(doc):
 def _current_section(doc,level=1):
     return ".".join(map(str,doc.pandoc_tex_numbering["current_sec"][:level]))
 
-def _current_numbering(doc,item="eq"):
+def _current_numbering(doc,item="eq",subfigure=False):
     reset_level = doc.pandoc_tex_numbering["num_reset_level"]
     num = doc.pandoc_tex_numbering[f"current_{item}"]
     if reset_level == 0:
-        return str(num)
+        num_str = str(num)
     else:
         sec = _current_section(doc,level=doc.pandoc_tex_numbering["num_reset_level"])
-        return f"{sec}.{num}"
+        num_str = f"{sec}.{num}"
+    if subfigure:
+        num_str += doc.pandoc_tex_numbering["subfig_format"](doc.pandoc_tex_numbering["current_subfig"])
+    return num_str
 
 
 def _parse_multiline_environment(root_node,doc):
@@ -291,20 +302,42 @@ def find_labels_table(elem,doc):
         }
 
 def find_labels_figure(elem,doc):
+    # We will walk the subfigures in a Figure element manually, therefore we directly skip the subfigures from global walking
+    if isinstance(elem.parent,Figure):return
+
     doc.pandoc_tex_numbering["current_fig"] += 1
+    doc.pandoc_tex_numbering["current_subfig"] = 0
+    _find_labels_figure(elem,doc,subfigure=False)
+
+    for child in elem.content:
+        if isinstance(child,Figure):
+            doc.pandoc_tex_numbering["current_subfig"] += 1
+            _find_labels_figure(child,doc,subfigure=True)
+
+
+def _find_labels_figure(elem,doc,subfigure=False):
     label = elem.identifier
-    numbering = _current_numbering(doc,"fig")
+    numbering = _current_numbering(doc,"fig",subfigure=subfigure)
     if not label and doc.pandoc_tex_numbering["auto_labelling"]:
         label = f"fig:{numbering}"
         elem.identifier = label
     
-    add_label_to_caption(numbering,label,elem,doc.pandoc_tex_numbering["fig_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
+    if subfigure:
+        caption_numbering = doc.pandoc_tex_numbering["subfig_format"](doc.pandoc_tex_numbering["current_subfig"])
+        prefix = ""
+        pref_space = False
+    else:
+        caption_numbering = numbering
+        prefix = doc.pandoc_tex_numbering["fig_pref"].capitalize()
+        pref_space = doc.pandoc_tex_numbering["pref_space"]
+    add_label_to_caption(caption_numbering,label,elem,prefix,pref_space)
     if label:
         doc.pandoc_tex_numbering["ref_dict"][label] = {
             "num": numbering,
             "type": "fig",
             "caption": to_string(elem.caption),
-            "short_caption": to_string(elem.caption.short_caption)
+            "short_caption": to_string(elem.caption.short_caption),
+            "subfigure": subfigure
         }
 
 def action_find_labels(elem, doc):
