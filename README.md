@@ -251,3 +251,4 @@ There are some known issues and possible improvements:
 - [ ] Support multiple references in `cleveref` package.
 - [x] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
 - [ ] Support `align*` and other non-numbered environments.
+- [x] Subfigure support.
