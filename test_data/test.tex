@@ -6,6 +6,7 @@
 \usepackage{cleveref} % Added cleveref package
 \usepackage{longtable} % Added longtable package
 \usepackage{bicaption}
+\usepackage{subcaption}
 
 % Custom names for cref
 \crefname{equation}{equation}{equations}
@@ -16,7 +17,6 @@
 \title{pandoc-tex-numbering Test Document}
 \begin{document}
 \maketitle
-\listoffigures
 \section{Introduction}
 This document is created to test the pandoc numbering functions for equations, figures, and tables. \Cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref) provide examples of equations, figures, and tables.
 
@@ -52,12 +52,22 @@ Here is a single line equation:
 \section{Figures and Tables\label{sec:figures_tables}}
 
 \subsection{Figures}
-\Cref{fig:example} (cref) shows an example image.
+\Cref{fig:example} (cref) shows an example image with two subfigures: figure \ref{fig:subfig1} (ref) and \cref{fig:subfig2} (cref).
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{./example-image}
-    \caption[short caption]{Example Image}
+    \begin{subfigure}[b]{0.5\textwidth}
+        \centering
+        \includegraphics[width=0.5\textwidth]{./example-image}
+        \caption{Subfigure 1}
+        \label{fig:subfig1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.5\textwidth}
+        \centering
+        \includegraphics[width=0.5\textwidth]{./example-image}
+        \caption{Subfigure 2}
+        \label{fig:subfig2}
+    \end{subfigure}
+    \caption[short caption]{Example Figure}
     \label{fig:example}
 \end{figure}
 

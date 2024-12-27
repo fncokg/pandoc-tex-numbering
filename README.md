@@ -63,8 +63,13 @@ For the section numbering, you can customize the format of the section numbering
 - `section-format-ref-1`, `section-format-ref-2`,...: The format of the section numbering used in the references. **If set, this will override the `section-prefix` metadata**. Default is `"{h1}"`, `"{h1}.{h2}"`, etc. combined with the `section-prefix` and `prefix-space` metadata.
 - `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `false`. If set to `true`, all non arabic section fields are also supported, and in this case, **the `lang_num.py` file must also be included in the same directory as the filter.**
 
+### Subfigure Support
+You can use the `subcaption` package to create subfigures. The filter will automatically number the subfigures. You can customize the subfigure numbering by setting the following metadata:
+- `subfigure-symbols`: The symbols used for subfigure numbering. Default is `"abcdefghijklmnopqrstuvwxyz"`. The symbols will be used in the order specified. You must ensure that the number of symbols is greater than or equal to the number of subfigures in a figure.
+- `subfigure-format`: The format of the subfigures used in captions and references. This is a python f-string format similar to the section numbering format. Default is `"{sym}"`. The available fields are `sym` and `num`. `sym` is the symbol of the subfigure and `num` is the number of the subfigure. For example, if you set `subfigure-format="({sym})"`(i.e. parentheses around the symbol), the subfigures will be shown as "(a)", "(b)" etc. in the captions and references.
+
 ### Caption Renaming
-The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables.
+The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables (but they are not used in subfigures and subtables).
 
 ## `org` file support
 
@@ -177,6 +182,7 @@ In the following example, we custom the following (maybe silly) items *only for 
 - Reset the numbering at the second level sections, such that the numbering will be shown as "1.1.1", "3.2.1" etc.
 - At the beginning of sections, use Chinese numbers "第一章" for the first level sections and English numbers "Section 1.1" for the second level sections.
 - When referred to, use, in turn, "Chapter 1", "第1.1节" etc.
+- For subfigures, use greek letters combined with arabic numbers and replace the parentheses with square brackets, such that the subfigures will be shown as "[α1]", "[β2]" etc.
 
 **In this case, please note that the `lang_num.py` file must be also included in the same directory as the filter.**
 
@@ -197,6 +203,8 @@ section-format-source-1: "第{h1_zh}章"
 section-format-source-2: "Section {h1}.{h2}."
 section-format-ref-1: "Chapter {h1}"
 section-format-ref-2: "第{h1}.{h2}节"
+subfigure-format: "[{sym}({num})]"
+subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
 ```
 
 The results are shown as follows:
