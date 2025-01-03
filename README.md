@@ -93,7 +93,7 @@ If metadata `number-equations` is set to `true`, all the equations will be numbe
 
 Equations under multiline environments (specified by metadata `multiline-environments` ) such as `align`, `cases` etc. are numbered line by line, and the others are numbered as a whole block.
 
-That is to say, if you want the filter to number multiline equations line by line, use `align`, `cases` etc. environments directly. If you want the filter to number the whole block as a whole, use `split`, `aligned` etc. environments in the `equation` environment.
+That is to say, if you want the filter to number multiline equations line by line, use `align`, `cases` etc. environments directly. If you want the filter to number the whole block as a whole, use `split`, `aligned` etc. environments in the `equation` environment. In multiline environments, **`\nonumber` commands are supported** to turn off the numbering of a specific line.
 
 For example, as shown in `test_data/test.tex`:
 
@@ -112,13 +112,15 @@ This equation will be numbered as a whole block, say, (1.1), while:
 ```latex
 \begin{align}
     a &= b + c \label{eq:align1} \\
-    d &= e - f \label{eq:align2}
+    d &= e - f \label{eq:align2} \\
+    g &= h \nonumber \\
+    i &= j + k \label{eq:align3}
 \end{align}
 ```
 
-This equation will be numbered line by line, say, (1.2) and (1.3)
+This equation will be numbered line by line, say, (1.2), (1.3) and (1.4), while the third line will not be numbered.
 
-**NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment via the `*` mark. *This may be fixed by a custom lua reader to keep those information in the future.*
+**NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment via the `*` mark. If you do want to turn off the numbering of a specific `align` environment, a temporary solution is to manually add `\nonumber` commands to every line of the environment. *This may be fixed by a custom lua reader to keep those information in the future.*
 
 ## Sections
 
@@ -250,5 +252,5 @@ That said, however, functionalities mentioned above can never be supported easil
 There are some known issues and possible improvements:
 - [ ] Support multiple references in `cleveref` package.
 - [x] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
-- [ ] Support `align*` and other non-numbered environments.
+- [ ] Directly support `align*` and other non-numbered environments.
 - [x] Subfigure support.
