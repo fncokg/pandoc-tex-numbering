@@ -159,6 +159,8 @@ def _parse_multiline_environment(root_node,doc):
     # Multiple equations
     doc.pandoc_tex_numbering["current_eq"] += 1
     current_numbering = _current_numbering(doc,"eq")
+    label_of_this_line = None
+    is_label_this_line = True
     for node in root_node.nodelist:
         if isinstance(node,LatexMacroNode):
             if node.macroname == "label":
@@ -166,11 +168,18 @@ def _parse_multiline_environment(root_node,doc):
                 # label = node.nodeargd.argnlist[0].nodelist[0].chars
                 arg1 = node.nodeargd.argnlist[0]
                 label = arg1.latex_verbatim()[1:-1]
-                labels[label] = current_numbering
+                label_of_this_line = label
+            if node.macroname == "nonumber":
+                is_label_this_line = False
             if node.macroname == "\\":
-                environment_body += f"\\qquad{{({current_numbering})}}"
-                doc.pandoc_tex_numbering["current_eq"] += 1
-                current_numbering = _current_numbering(doc,"eq")
+                if is_label_this_line:
+                    environment_body += f"\\qquad{{({current_numbering})}}"
+                    if label_of_this_line:
+                        labels[label_of_this_line] = current_numbering
+                    doc.pandoc_tex_numbering["current_eq"] += 1
+                    current_numbering = _current_numbering(doc,"eq")
+                label_of_this_line = None
+                is_label_this_line = True
         environment_body += node.latex_verbatim()
     environment_body += f"\\qquad{{({current_numbering})}}"
     modified_math_str = f"\\begin{{{root_node.environmentname}}}{environment_body}\\end{{{root_node.environmentname}}}"
