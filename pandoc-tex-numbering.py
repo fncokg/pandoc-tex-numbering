@@ -181,7 +181,11 @@ def _parse_multiline_environment(root_node,doc):
                 label_of_this_line = None
                 is_label_this_line = True
         environment_body += node.latex_verbatim()
-    environment_body += f"\\qquad{{({current_numbering})}}"
+    
+    if is_label_this_line:
+        environment_body += f"\\qquad{{({current_numbering})}}"
+        if label_of_this_line:
+            labels[label_of_this_line] = current_numbering
     modified_math_str = f"\\begin{{{root_node.environmentname}}}{environment_body}\\end{{{root_node.environmentname}}}"
     return modified_math_str,labels
 
