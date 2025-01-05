@@ -11,3 +11,7 @@ For people who are using the beta version, there are some minor changes:
 # 1.0.1 (2025-01-05)
 
 Update the README file to include the installation guide and the usage of the project.
+
+# 1.0.2 (2025-01-05)
+
+Fix import error in the `org_helper.lua` file.

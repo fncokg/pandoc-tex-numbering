@@ -7,7 +7,7 @@ from typing import Union
 from panflute import *
 from pylatexenc.latexwalker import LatexWalker,LatexEnvironmentNode,LatexMacroNode
 
-from lang_num import language_functions as LANG_NUM_FUNCS
+from .lang_num import language_functions as LANG_NUM_FUNCS
 
 logger = logging.getLogger('pandoc-tex-numbering')
 hdlr = logging.FileHandler('pandoc-tex-numbering.log')
