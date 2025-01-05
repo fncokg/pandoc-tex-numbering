@@ -3,10 +3,42 @@ This is an all-in-one pandoc filter especially for LaTeX files to keep **numberi
 
 With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any format pandoc supported, especially `.docx`, while **keep all your auto-numberings and cross references**.
 
-`pandoc-tex-numbering` also supports:
-- **Multi-line environments** in LaTeX math block such as `align`, `cases` etc.
-- **Non-arabic numbers** for the section numbering such as Chinese numbers "第一章", "第二节" etc.
-- **`cleveref` package** and even more clever cross-references customization.
+
+# Contents
+- [pandoc-tex-numbering](#pandoc-tex-numbering)
+- [Contents](#contents)
+- [What do we support?](#what-do-we-support)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Customization](#customization)
+  - [General](#general)
+  - [Equations](#equations)
+  - [`cleveref` Support](#cleveref-support)
+  - [Custom Section Numbering Format](#custom-section-numbering-format)
+  - [Subfigure Support](#subfigure-support)
+  - [Caption Renaming](#caption-renaming)
+- [Details](#details)
+  - [Equations](#equations-1)
+  - [Sections](#sections)
+  - [Figures and Tables](#figures-and-tables)
+  - [Data Export](#data-export)
+  - [Log](#log)
+  - [`org` file support](#org-file-support)
+- [Examples](#examples)
+  - [Default Metadata](#default-metadata)
+  - [Customized Metadata](#customized-metadata)
+- [Development](#development)
+  - [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support)
+  - [Custom Numbering Format](#custom-numbering-format)
+  - [Extend the Filter](#extend-the-filter)
+- [FAQ](#faq)
+- [TODO](#todo)
+
+# What do we support?
+- **Multi-line Equations**: Multi-line equations in LaTeX math block such as `align`, `cases` can be numbered line by line. `\nonumber` commands are supported to turn off the numbering of a specific line.
+- **`cleveref` Package**: `cref` and `Cref` commands are supported. You can customize the prefix of the references.
+- **Subfigures**: `subcaption` package is supported. Subfigures can be numbered with customized symbols and formats.
+- **Non-Arabic Numbers**: Chinese numbers "第一章", "第二节" etc. are supported. You can customize the numbering format.
 
 # Installation
 
@@ -20,9 +52,7 @@ pip install pandoc-tex-numbering
 
 You can also download the source code manually and put it in the same directory as your source file. In this case, when using the filter, you should specify the filter file via `-F pandoc-tex-numbering.py` instead of `-F pandoc-tex-numbering`.
 
-# Usage
-
-## Quick Start
+# Quick Start
 
 Take `.docx` as an example:
 
@@ -30,15 +60,11 @@ Take `.docx` as an example:
 pandoc -F pandoc-tex-numbering -o output.docx input.tex 
 ```
 
-Note 1: (*skip this if you are working on `.tex` files*) The filter is designed for LaTeX files but, technically, it can also work with any LaTeX-like documents as long as `pandoc` is able to parse them in a LaTeX-like AST. For example, it can work with `.org` files with the help of an additional lua filter `org_helper.lua`. See the [org file support](#org-file-support) section for more details.
-
-Note 2: By default, the filter will number the sections, figures, tables, and equations. In case you only want to number some of them (for example in case you want to number only equations with this filter while number others with other filters), you can set the corresponding variables in the metadata of your LaTeX file. See the [Customization](#customization) section for more details.
-
-## Customization
+# Customization
 
 You can set the following variables in the metadata of your LaTeX file to customize the behavior of the filter:
 
-### General
+## General
 - `number-figures`: Whether to number the figures. Default is `true`.
 - `number-tables`: Whether to number the tables. Default is `true`.
 - `number-equations`: Whether to number the equations. Default is `true`.
@@ -47,10 +73,10 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `data-export-path`: Where to export the filter data. Default is `None`, which means no data will be exported. If set, the data will be exported to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter-debugging.
 - `auto-labelling`: Whether to automatically add identifiers (labels) to figures and tables without labels. Default is `true`. This has no effect on the output appearance but can be useful for cross-referencing in the future (for example, in the `.docx` output this will ensure that all your figures and tables have a unique auto-generated bookmark).
 
-### Equations
+## Equations
 - `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
 
-### `cleveref` Support
+## `cleveref` Support
 Currently, pandoc's default LaTeX reader does not support `\crefname` and `\Crefname` commands (they are not visible in the AST for filters). To support cleveref package, you can set the following metadata:
 - `figure-prefix`: The prefix of the figure reference. Default is "Figure".
 - `table-prefix`: The prefix of the table reference. Default is "Table".
@@ -60,32 +86,19 @@ Currently, pandoc's default LaTeX reader does not support `\crefname` and `\Cref
 
 **Note: multiple references are not supported currently.** Try to use `Figures \ref{fig:1} and \ref{fig:2}` instead of `\cref{fig:1,fig:2}` for now.
 
-### Custom Section Numbering Format
+## Custom Section Numbering Format
 For the section numbering, you can customize the format of the section numbering added at the beginning of the section titles and used in the references. The following metadata are used. For more details, see the [Details of Sections](#sections) section.
 - `section-format-source-1`, `section-format-source-2`,...: The format of the section numbering at each level. Default is `"{h1}"`, `"{h1}.{h2}"` etc.
 - `section-format-ref-1`, `section-format-ref-2`,...: The format of the section numbering used in the references. **If set, this will override the `section-prefix` metadata**. Default is `"{h1}"`, `"{h1}.{h2}"`, etc. combined with the `section-prefix` and `prefix-space` metadata.
 
-### Subfigure Support
+## Subfigure Support
 You can use the `subcaption` package to create subfigures. The filter will automatically number the subfigures. You can customize the subfigure numbering by setting the following metadata:
 - `subfigure-symbols`: The symbols used for subfigure numbering. Default is `"abcdefghijklmnopqrstuvwxyz"`. The symbols will be used in the order specified. You must ensure that the number of symbols is greater than or equal to the number of subfigures in a figure.
 - `subfigure-format`: The format of the subfigures used in captions and references. This is a python f-string format similar to the section numbering format. Default is `"{sym}"`. The available fields are `sym` and `num`. `sym` is the symbol of the subfigure and `num` is the number of the subfigure. For example, if you set `subfigure-format="({sym})"`(i.e. parentheses around the symbol), the subfigures will be shown as "(a)", "(b)" etc. in the captions and references.
 
-### Caption Renaming
+## Caption Renaming
 The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables (but they are not used in subfigures and subtables).
 
-## `org` file support
-
-`org` files are supported by adding an additional lua filter `org_helper.lua` to the pandoc command. The usage is as follows:
-
-```bash
-pandoc --lua-filter org_helper.lua --filter pandoc-tex-numbering.py input.org -o output.docx
-```
-
-**Be sure to use `--lua-filter org_helper.lua` before `--filter pandoc-tex-numbering.py`**.
-
-Reason for this is the default `org` reader of `pandoc` does not parse LaTeX codes by default, for example, LaTeX equations in `equation` environments and cross references via `\ref{}` macros are parsed as `RawBlock` and `RawInline` nodes, while we desire `Math` nodes and `Link` nodes respectively. The `org_helper.lua` filter helps read these blocks via `latex` reader and after that, the `pandoc-tex-numbering.py` filter can work as expected.
-
-Related discussions can also be found in [pandoc issue #1764](https://github.com/jgm/pandoc/issues/1764) (codes in `org_helper.lua` are based on comments from @tarleb in this issue) and [pandoc-tex-numbering issue #1](https://github.com/fncokg/pandoc-tex-numbering/issues/1).
 
 # Details
 
@@ -157,6 +170,21 @@ Note: currently, short captions defined via `\caption[short caption]{full captio
 ## Log
 
 Some warning message will be shown in the log file named `pandoc-tex-numbering.log` in the same directory as the output file. You can check this file if you encounter any problems or report those messages in the issues.
+
+
+## `org` file support
+
+`org` files are supported by adding an additional lua filter `src\org_helper.lua` to the pandoc command. The usage is as follows:
+
+```bash
+pandoc --lua-filter org_helper.lua --filter pandoc-tex-numbering.py input.org -o output.docx
+```
+
+**Be sure to use `--lua-filter org_helper.lua` before `--filter pandoc-tex-numbering.py`**.
+
+Reason for this is the default `org` reader of `pandoc` does not parse LaTeX codes by default, for example, LaTeX equations in `equation` environments and cross references via `\ref{}` macros are parsed as `RawBlock` and `RawInline` nodes, while we desire `Math` nodes and `Link` nodes respectively. The `org_helper.lua` filter helps read these blocks via `latex` reader and after that, the `pandoc-tex-numbering.py` filter can work as expected.
+
+Related discussions can also be found in [pandoc issue #1764](https://github.com/jgm/pandoc/issues/1764) (codes in `org_helper.lua` are based on comments from @tarleb in this issue) and [pandoc-tex-numbering issue #1](https://github.com/fncokg/pandoc-tex-numbering/issues/1).
 
 # Examples
 
@@ -247,3 +275,4 @@ There are some known issues and possible improvements:
 - [x] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
 - [ ] Directly support `align*` and other non-numbered environments.
 - [x] Subfigure support.
+- [ ] Support short captions in `docx` output.
