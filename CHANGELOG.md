@@ -14,4 +14,8 @@ Update the README file to include the installation guide and the usage of the pr
 
 # 1.0.2 (2025-01-05)
 
-Fix import error in the `org_helper.lua` file.
+Fix import error in the `pandoc_tex_numbering/__init__.py` file.
+
+# 1.0.3 (2025-01-05)
+
+Add OXML base support for future docx development.
