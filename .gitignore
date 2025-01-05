@@ -4,3 +4,4 @@
 **/*.log
 **/*.tmp
 tests/test.json
+dist/

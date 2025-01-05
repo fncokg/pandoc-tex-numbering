@@ -10,12 +10,15 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 
 # Installation
 
-1. Install `pandoc` and `python3` if you haven't.
-2. Install python package `panflute` and `pylatexenc` if you haven't:
+First, install `pandoc` and `python3` if you haven't.
+
+`pandoc-tex-numbering` can be installed via `pip`:
+
 ```bash
-pip install panflute pylatexenc
+pip install pandoc-tex-numbering
 ```
-3. Download the `pandoc-tex-numbering.py` and put it in your PATH or in the same directory as your LaTeX source file.
+
+You can also download the source code manually and put it in the same directory as your source file. In this case, when using the filter, you should specify the filter file via `-F pandoc-tex-numbering.py` instead of `-F pandoc-tex-numbering`.
 
 # Usage
 
@@ -24,7 +27,7 @@ pip install panflute pylatexenc
 Take `.docx` as an example:
 
 ```bash
-pandoc --filter pandoc-tex-numbering.py input.tex -o output.docx
+pandoc -F pandoc-tex-numbering -o output.docx input.tex 
 ```
 
 Note 1: (*skip this if you are working on `.tex` files*) The filter is designed for LaTeX files but, technically, it can also work with any LaTeX-like documents as long as `pandoc` is able to parse them in a LaTeX-like AST. For example, it can work with `.org` files with the help of an additional lua filter `org_helper.lua`. See the [org file support](#org-file-support) section for more details.
@@ -61,7 +64,6 @@ Currently, pandoc's default LaTeX reader does not support `\crefname` and `\Cref
 For the section numbering, you can customize the format of the section numbering added at the beginning of the section titles and used in the references. The following metadata are used. For more details, see the [Details of Sections](#sections) section.
 - `section-format-source-1`, `section-format-source-2`,...: The format of the section numbering at each level. Default is `"{h1}"`, `"{h1}.{h2}"` etc.
 - `section-format-ref-1`, `section-format-ref-2`,...: The format of the section numbering used in the references. **If set, this will override the `section-prefix` metadata**. Default is `"{h1}"`, `"{h1}.{h2}"`, etc. combined with the `section-prefix` and `prefix-space` metadata.
-- `non-arabic_numbers`: Whether to use non-arabic numbers for the section numbering. Default is `false`. If set to `true`, all non arabic section fields are also supported, and in this case, **the `lang_num.py` file must also be included in the same directory as the filter.**
 
 ### Subfigure Support
 You can use the `subcaption` package to create subfigures. The filter will automatically number the subfigures. You can customize the subfigure numbering by setting the following metadata:
@@ -132,15 +134,9 @@ For example, to add a prefix "Chapter" and a suffix "." to the first-level secti
 
 The default values of `section-format-source-1`, `section-format-source-2`, etc. are in fact `{h1}`, `{h1}.{h2}`, etc. respectively, and the default values of `section-format-ref-1`, `section-format-ref-2`, etc. are in fact `{h1}`, `{h1}.{h2}` combined with the `section-prefix` and `prefix-space` metadata respectively.
 
-Sometimes, non arabic numberings are needed. For example, in Chinese, with `section-format-source-1="第{h1}章"`, the users get "第1章", "第2章" etc. However, sometimes the users may need "第一章", "第二章" etc. To achieve this, we also support non arabic numbers by series of non-arabic fields. For example, when `{h1}` is 12, the Chinese number field `{h1_zh}` will be "十二". To enable this feature, you need to:
+Sometimes, non arabic numberings are needed. For example, in Chinese, with `section-format-source-1="第{h1}章"`, the users get "第1章", "第2章" etc. However, sometimes the users may need "第一章", "第二章" etc. To achieve this, we also support non arabic numbers by series of **non-arabic fields**. For example, when `{h1}` is 12, the Chinese number field `{h1_zh}` will be "十二".
 
-- set `non-arabic-numbers` to `true` in the metadata.
-- include the `lang_num.py` file in the same directory as the filter.
-- set `section-format-source-1="第{h1_zh}章"` and `section-format-ref-1="第{h1_zh}章"` in the metadata.
-
-Note that:
-- The non-arbic number support is by default turned off. You need to explicitly turn it on.
-- The current version only supports simplified Chinese numbers. If you need other languages, you can modify the `lang_num.py` file. See the [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support) section for more details.
+Note that: The current version only supports simplified Chinese numbers. If you need other languages, you can modify the `lang_num.py` file. See the [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support) section for more details.
 
 ## Figures and Tables
 
@@ -164,7 +160,7 @@ Some warning message will be shown in the log file named `pandoc-tex-numbering.l
 
 # Examples
 
-With the testing file `testing_data/test.tex`:
+With the testing file `tests/test.tex`:
 
 ## Default Metadata
 
@@ -186,8 +182,6 @@ In the following example, we custom the following (maybe silly) items *only for 
 - When referred to, use, in turn, "Chapter 1", "第1.1节" etc.
 - For subfigures, use greek letters combined with arabic numbers and replace the parentheses with square brackets, such that the subfigures will be shown as "[α1]", "[β2]" etc.
 
-**In this case, please note that the `lang_num.py` file must be also included in the same directory as the filter.**
-
 Run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
 
 ```bash
@@ -200,7 +194,6 @@ figure-prefix: Fig
 table-prefix: Tab
 equation-prefix: Eq
 number-reset-level: 2
-non-arabic-numbers: true
 section-format-source-1: "第{h1_zh}章"
 section-format-source-2: "Section {h1}.{h2}."
 section-format-ref-1: "Chapter {h1}"
