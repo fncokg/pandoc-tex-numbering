@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pandoc_tex_numbering"]
+
+[project]
+name = "pandoc-tex-numbering"
+version = "1.0.0"
+dependencies = ["pylatexenc", "panflute"]
+requires-python = ">=3.8"
+authors = [{ name = "Chao Kong", email = "kongchao1998@gmail.com" }]
+description = "All-in-one pandoc filter for numbering and cross referencing multi-line equations, sections, figures and tables in TeX."
+readme = "README.md"
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    'Environment :: Console',
+]
+
+[project.urls]
+Documentation = "https://github.com/fncokg/pandoc-tex-numbering"
+Repository = "https://github.com/fncokg/pandoc-tex-numbering"
+"Bug Tracker" = "https://github.com/fncokg/pandoc-tex-numbering/issues"
+
+[project.scripts]
+pandoc-tex-numbering = "pandoc_tex_numbering:main"

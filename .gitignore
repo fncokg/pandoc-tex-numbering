@@ -3,4 +3,4 @@
 **/*.docx
 **/*.log
 **/*.tmp
-test_data/test.json
+tests/test.json

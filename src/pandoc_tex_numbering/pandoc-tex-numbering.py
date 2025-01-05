@@ -7,6 +7,8 @@ from typing import Union
 from panflute import *
 from pylatexenc.latexwalker import LatexWalker,LatexEnvironmentNode,LatexMacroNode
 
+from lang_num import language_functions as LANG_NUM_FUNCS
+
 logger = logging.getLogger('pandoc-tex-numbering')
 hdlr = logging.FileHandler('pandoc-tex-numbering.log')
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -30,15 +32,12 @@ def to_string(elem):
     else:
         return ""
 
-def number_fields(numbers,max_levels,non_arabic_numbers=False):
-    if non_arabic_numbers:
-        from lang_num import language_functions
+def number_fields(numbers,max_levels):
     fields = {}
     for i in range(1,len(numbers)+1):
         fields[f"h{i}"] = str(numbers[i-1])
-        if non_arabic_numbers:
-            for language,func in language_functions.items():
-                fields[f"h{i}_{language}"] = func(numbers[i-1])
+        for language,func in LANG_NUM_FUNCS.items():
+            fields[f"h{i}_{language}"] = func(numbers[i-1])
     return fields
 
 def prepare(doc):
@@ -64,7 +63,6 @@ def prepare(doc):
         "auto_labelling": doc.get_metadata("auto-labelling", True),
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
-        "non_arabic_numbers": doc.get_metadata("non-arabic-numbers", False),
 
         # state variables
         "ref_dict": {},
@@ -93,10 +91,10 @@ def prepare(doc):
         current_format_source = doc.get_metadata(f"section-format-source-{i}", default_format_source)
         current_format_ref = doc.get_metadata(f"section-format-ref-{i}", default_format_ref)
         section_formats_source[i] = lambda numbers,f=current_format_source: f.format(
-            **number_fields(numbers,i,doc.pandoc_tex_numbering["non_arabic_numbers"])
+            **number_fields(numbers,i)
         )
         section_fromats_ref[i] = lambda numbers,f=current_format_ref: f.format(
-            **number_fields(numbers,i,doc.pandoc_tex_numbering["non_arabic_numbers"])
+            **number_fields(numbers,i)
         )
     doc.pandoc_tex_numbering["sec_format_source"] = section_formats_source
     doc.pandoc_tex_numbering["sec_format_ref"] = section_fromats_ref
