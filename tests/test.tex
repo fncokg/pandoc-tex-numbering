@@ -17,6 +17,7 @@
 \title{pandoc-tex-numbering Test Document}
 \begin{document}
 \maketitle
+
 \section{Introduction}
 This document is created to test the pandoc numbering functions for equations, figures, and tables. \Cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref) provide examples of equations, figures, and tables.
 
@@ -69,7 +70,7 @@ Here is a single line equation:
         \caption{Subfigure 2}
         \label{fig:subfig2}
     \end{subfigure}
-    \caption[short caption]{Example Figure}
+    \caption[short caption]{This is a long caption for the example image.}
     \label{fig:example}
 \end{figure}
 
@@ -86,7 +87,7 @@ Here is a single line equation:
         Data 4 & Data 5 & Data 6 \\
         \hline
     \end{tabular}
-    \caption{Example Table}
+    \caption{This is an example table with no short caption.}
     \label{tab:example}
 \end{table}
 
@@ -109,5 +110,9 @@ Here is a single line equation:
 
 \section{Conclusion}
 This document includes examples of multiline equations, single line equations, figures, and tables with labels and references to test the pandoc numbering functions. For more details, see \cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref).
+
+\listoffigures
+
+\listoftables
 
 \end{document}

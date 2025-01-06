@@ -1,15 +1,19 @@
-# 1.0.1 (2025-01-05)
+# 1.1.0 (2025-01-06)
 
-Update the README file to include the installation guide and the usage of the project.
+Custom list of figures and tables supporting **short captions* and custom titles.
+
+# 1.0.3 (2025-01-05)
+
+Add OXML base support for future docx development.
 
 
 # 1.0.2 (2025-01-05)
 
 Fix import error in the `pandoc_tex_numbering/__init__.py` file.
 
-# 1.0.3 (2025-01-05)
+# 1.0.1 (2025-01-05)
 
-Add OXML base support for future docx development.
+Update the README file to include the installation guide and the usage of the project.
 
 # 1.0.0 (2025-01-05)
 After several bug fixes and improvements, I released the first stable version of the project. 

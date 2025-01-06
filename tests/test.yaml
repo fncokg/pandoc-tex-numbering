@@ -10,3 +10,8 @@ section-format-ref-1: "Chapter {h1}"
 section-format-ref-2: "第{h1}.{h2}节"
 subfigure-format: "[{sym}({num})]"
 subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
+custom-lot: true
+custom-lof: true
+lot-title: "Table List"
+lof-title: "图片目录"
+list-leader-type: "hyphen"

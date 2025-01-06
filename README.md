@@ -16,6 +16,7 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
   - [`cleveref` Support](#cleveref-support)
   - [Custom Section Numbering Format](#custom-section-numbering-format)
   - [Subfigure Support](#subfigure-support)
+  - [List of Figures and Tables](#list-of-figures-and-tables)
   - [Caption Renaming](#caption-renaming)
 - [Details](#details)
   - [Equations](#equations-1)
@@ -40,6 +41,7 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 - **`cleveref` Package**: `cref` and `Cref` commands are supported. You can customize the prefix of the references.
 - **Subfigures**: `subcaption` package is supported. Subfigures can be numbered with customized symbols and formats.
 - **Non-Arabic Numbers**: Chinese numbers "第一章", "第二节" etc. are supported. You can customize the numbering format.
+- **Custom List of Figures and Tables**: **Short captions** as well as custom lof/lot titles are supported for figures and tables.
 
 # Installation
 
@@ -97,9 +99,20 @@ You can use the `subcaption` package to create subfigures. The filter will autom
 - `subfigure-symbols`: The symbols used for subfigure numbering. Default is `"abcdefghijklmnopqrstuvwxyz"`. The symbols will be used in the order specified. You must ensure that the number of symbols is greater than or equal to the number of subfigures in a figure.
 - `subfigure-format`: The format of the subfigures used in captions and references. This is a python f-string format similar to the section numbering format. Default is `"{sym}"`. The available fields are `sym` and `num`. `sym` is the symbol of the subfigure and `num` is the number of the subfigure. For example, if you set `subfigure-format="({sym})"`(i.e. parentheses around the symbol), the subfigures will be shown as "(a)", "(b)" etc. in the captions and references.
 
+## List of Figures and Tables
+To support short captions and custom titles in the list of figures and tables, you can set the following metadata to turn on the custom list of figures and tables:
+- `custom-lof`: Whether to use a custom list of figures. Default is `false`.
+- `custom-lot`: Whether to use a custom list of tables. Default is `false`.
+
+NOTE: **pass `-f latex+raw_tex` to the pandoc command if you want to put the lists at the correct position.** This is because the filter cannot get access to the position of the lists in the LaTeX source code unless the `raw_tex` extension is enabled. **If `raw_tex` is not enabled or the `\listoffigures` and `\listoftables` commands are not found, the lists will be put at the beginning of the document.**
+
+You can customize the list of figures and tables by setting the following metadata:
+- `lof-title`: The title of the list of figures. Default is "List of Figures".
+- `lot-title`: The title of the list of tables. Default is "List of Tables".
+- `list-leader-type`: The type of leader used in the list of figures and tables (placeholders between the caption and the page number). Default is "dots". Possible values are "dot", "hyphen", "underscore", "middleDot" and "none".
+
 ## Caption Renaming
 The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables (but they are not used in subfigures and subtables).
-
 
 # Details
 
@@ -194,7 +207,7 @@ With the testing file `tests/test.tex`:
 ## Default Metadata
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering.py test.tex 
+pandoc -o output.docx -F pandoc-tex-numbering test.tex 
 ```
 
 The results are shown as follows:
@@ -210,11 +223,14 @@ In the following example, we custom the following (maybe silly) items *only for 
 - At the beginning of sections, use Chinese numbers "第一章" for the first level sections and English numbers "Section 1.1" for the second level sections.
 - When referred to, use, in turn, "Chapter 1", "第1.1节" etc.
 - For subfigures, use greek letters combined with arabic numbers and replace the parentheses with square brackets, such that the subfigures will be shown as "[α1]", "[β2]" etc.
+- Turn on custom list of figures and tables and:
+  - Use custom titles as "图片目录" and "Table Lists" respectively.
+  - Use hyphens as the leader in the lists.
 
 Run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering.py --metadata-file test.yaml test.tex
+pandoc -o output.docx -F pandoc-tex-numbering --metadata-file test.yaml -f latex+raw_tex test.tex
 ```
 
 ```yaml
@@ -223,12 +239,18 @@ figure-prefix: Fig
 table-prefix: Tab
 equation-prefix: Eq
 number-reset-level: 2
+non-arabic-numbers: true
 section-format-source-1: "第{h1_zh}章"
 section-format-source-2: "Section {h1}.{h2}."
 section-format-ref-1: "Chapter {h1}"
 section-format-ref-2: "第{h1}.{h2}节"
 subfigure-format: "[{sym}({num})]"
 subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
+custom-lot: true
+custom-lof: true
+lot-title: "Table List"
+lof-title: "图片目录"
+list-leader-type: "hyphen"
 ```
 
 The results are shown as follows:

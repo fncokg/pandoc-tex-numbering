@@ -4,6 +4,7 @@ This module provides a set of classes to generate OpenXML elements in a more fri
 Based on this, we can directly add custom items to docx in the filter utilizing the RawBlock(format:openxml) in pandoc.
 """
 import xml.etree.ElementTree as ET
+from enum import Enum
 
 class ElementProxy:
     # Here we wrap the ElementTree.Element class to provide a lazy evaluation of the element and a more flexible and friendly interface
@@ -47,7 +48,23 @@ class ElementProxy:
     
     def to_string(self,encoding="utf-8"):
         return ET.tostring(self.element,xml_declaration=False,encoding=encoding).decode()
-    
+
+# define some enums
+class Alignment(Enum):
+    LEFT = "left"
+    RIGHT = "right"
+    CENTER = "center"
+
+class Leader(Enum):
+    DOT = "dot"
+    HYPHEN = "hyphen"
+    UNDERSCORE = "underscore"
+    NONE = "none"
+    MIDDLE_DOT = "middleDot"
+
+class PTab_RelativeTo(Enum):
+    MARGIN = "margin"
+    INDENT = "indent"
 
 class Run(ElementProxy):
     def __init__(self,children=None,attrs=None):
@@ -75,6 +92,24 @@ class Run(ElementProxy):
         break_elem = ElementProxy("w:br")
         self.append(break_elem)
         return break_elem
+    
+    def add_text(self,text):
+        text_elem = ElementProxy("w:t",text=text)
+        self.append(text_elem)
+        return text_elem
+    
+    def add_ptab(self,alignment:Alignment,leader:Leader,relative_to:PTab_RelativeTo):
+        ptab = PTabStop(alignment,leader,relative_to)
+        self.append(ptab)
+        return ptab
+
+class PTabStop(ElementProxy):
+    def __init__(self,alignment:Alignment=Alignment.LEFT,leader:Leader=Leader.NONE,relative_to:PTab_RelativeTo=PTab_RelativeTo.MARGIN):
+        super().__init__("w:ptab",attrs={
+            "w:alignment":alignment.value,
+            "w:leader":leader.value,
+            "w:relativeTo":relative_to.value
+        })
 
 class HyperLink(ElementProxy):
     def __init__(self,identifier,text,style=None):
@@ -102,14 +137,13 @@ class Paragraph(ElementProxy):
 
 
 class TabStop(ElementProxy):
-    def __init__(self,position=None,alignment=None,leader=None):
-        super().__init__("w:tab",attrs={})
+    def __init__(self,position=None,alignment:Alignment=Alignment.LEFT,leader:Leader=Leader.NONE):
+        super().__init__("w:tab",attrs={
+            "w:val":alignment.value,
+            "w:leader":leader.value
+        })
         if position:
             self.set_attrs({"w:pos":str(position)})
-        if alignment:
-            self.set_attrs({"w:val":alignment})
-        if leader:
-            self.set_attrs({"w:leader":leader})
 
 class ParagraphProperty(ElementProxy):
     def __init__(self,children=None,attrs=None):
@@ -131,7 +165,7 @@ class ParagraphProperty(ElementProxy):
         lang_elem.set_attrs({"w:eastAsia":lang})
         self.append(lang_elem)
 
-_length = {
+length2twip = {
     "in":lambda x: int(x*1440),
     "cm":lambda x: int(x*567), # 2.54 cm ≈ 1 inch, 72/2.54*20 ≈ 567
     "mm":lambda x: int(x*56.7),
@@ -140,16 +174,38 @@ _length = {
     "twip":lambda x: int(x)
 }
 
-def length2twip(value,unit="cm"):
-    return _length[unit](value)
+twip2length = {
+    "in":lambda x: x/1440,
+    "cm":lambda x: x/567,
+    "mm":lambda x: x/56.7,
+    "pt":lambda x: x/20,
+    "emu":lambda x: x*635,
+    "twip":lambda x: x
+}
 
-def parse_strlength(value):
-    items = value.strip().split(" ")
-    if len(items) == 2:
-        value,unit = items
-        try:
-            value = float(value)
-            return length2twip(value,unit)
-        except:
-            raise ValueError("Invalid length value")
-    raise ValueError("Invalid length string")
+class Length:
+    def __init__(self,value,unit="cm"):
+        self.value = value
+        self.unit = unit
+        self.twip = length2twip[unit](value)
+    
+    def to_unit(self,unit):
+        return twip2length[unit](self.twip)
+    
+    def __str__(self):
+        return f"{self.value} {self.unit}"
+    
+    def __repr__(self):
+        return f"Length({self.value},{self.unit})={self.twip} twip"
+    
+    @staticmethod
+    def from_string(value):
+        items = value.strip().split(" ")
+        if len(items) == 2:
+            value,unit = items
+            try:
+                value = float(value)
+                return Length(value,unit)
+            except:
+                raise ValueError("Invalid length value")
+        raise ValueError("Invalid length string")

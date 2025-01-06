@@ -8,6 +8,7 @@ from panflute import *
 from pylatexenc.latexwalker import LatexWalker,LatexEnvironmentNode,LatexMacroNode
 
 from .lang_num import language_functions as LANG_NUM_FUNCS
+from .docx_list import add_docx_list
 
 logger = logging.getLogger('pandoc-tex-numbering')
 hdlr = logging.FileHandler('pandoc-tex-numbering.log')
@@ -40,6 +41,18 @@ def number_fields(numbers,max_levels):
             fields[f"h{i}_{language}"] = func(numbers[i-1])
     return fields
 
+def extract_captions_from_refdict(ref_dict,ref_type,doc):
+    items = []
+    assert ref_type in ["fig","tab"]
+    for label,info in ref_dict.items():
+        if info["type"] == ref_type:
+            if ref_type == "fig" and info["subfigure"]: continue
+            caption_body = info["caption"] if not info["short_caption"] else info["short_caption"]
+            caption_ref = cleveref_numbering(info,doc,capitalize=True)
+            caption = f"{caption_ref}: {caption_body}" if caption_body else caption_ref
+            items.append((caption,label))
+    return items
+
 def prepare(doc):
     # These are global variables that will be used in the action functions, and will be destroyed after the finalization
     doc.pandoc_tex_numbering = {
@@ -64,6 +77,14 @@ def prepare(doc):
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
 
+        # custom list of figures and tables
+        "custom_lof": doc.get_metadata("custom-lof", False),
+        "custom_lot": doc.get_metadata("custom-lot", False),
+
+        "list_leader_type": doc.get_metadata("list-leader-type", "middleDot"),
+        "lof_title": doc.get_metadata("lof-title", "List of Figures"),
+        "lot_title": doc.get_metadata("lot-title", "List of Tables"),
+
         # state variables
         "ref_dict": {},
         "current_sec": [0]*MAX_LEVEL,
@@ -77,6 +98,9 @@ def prepare(doc):
             "labels": []
         },
         "tabs2wrap": [],
+
+        "lof_block": None,
+        "lot_block": None
     }
 
     # Initialize the section numbering formats
@@ -108,6 +132,7 @@ def prepare(doc):
     )
 
 def finalize(doc):
+    # Add labels for equations by wrapping them with div elements, since pandoc does not support adding identifiers to math blocks directly
     paras2wrap = doc.pandoc_tex_numbering["paras2wrap"]
     paras,labels_list = paras2wrap["paras"],paras2wrap["labels"]
     assert len(paras) == len(labels_list)
@@ -123,6 +148,8 @@ def finalize(doc):
                 parent.content.insert(idx,div)
             except Exception as e:
                 logger.warning(f"Failed to add identifier to paragraph because of {e}. Pleas check: \n The paragraph: {para}. Parent of the paragraph: {parent}")
+    
+    # Add labels for tables by wrapping them with div elements. This is necessary because if a table is not labelled in the latex source, pandoc will not generate a div element for it.
     for tab,label in doc.pandoc_tex_numbering["tabs2wrap"]:
         if label:
             parent = tab.parent
@@ -130,9 +157,28 @@ def finalize(doc):
             del parent.content[idx]
             div = Div(tab,identifier=label)
             parent.content.insert(idx,div)
+
+    if doc.pandoc_tex_numbering["custom_lot"]:
+        if not doc.pandoc_tex_numbering["lot_block"]:
+            doc.content.insert(0,RawBlock("\\listoftables",format="latex"))
+            doc.pandoc_tex_numbering["lot_block"] = doc.content[0]
+        table_items = extract_captions_from_refdict(doc.pandoc_tex_numbering["ref_dict"],"tab",doc)
+        add_docx_list(doc.pandoc_tex_numbering["lot_block"],table_items,doc.pandoc_tex_numbering["lot_title"],leader_type=doc.pandoc_tex_numbering["list_leader_type"])
+
+    if doc.pandoc_tex_numbering["custom_lof"]:
+        if not doc.pandoc_tex_numbering["lof_block"]:
+            doc.content.insert(0,RawBlock("\\listoffigures",format="latex"))
+            doc.pandoc_tex_numbering["lof_block"] = doc.content[0]
+        figure_items = extract_captions_from_refdict(doc.pandoc_tex_numbering["ref_dict"],"fig",doc)
+        add_docx_list(doc.pandoc_tex_numbering["lof_block"],figure_items,doc.pandoc_tex_numbering["lof_title"],leader_type=doc.pandoc_tex_numbering["list_leader_type"])
+    
+    
+    # Export the reference dictionary to a json file
     if doc.pandoc_tex_numbering["data_export_path"]:
         with open(doc.pandoc_tex_numbering["data_export_path"],"w") as f:
             json.dump(doc.pandoc_tex_numbering["ref_dict"],f,indent=2)
+    
+    # Clean up the global variables
     del doc.pandoc_tex_numbering
 
 def _current_section(doc,level=1):
@@ -303,12 +349,14 @@ def find_labels_table(elem,doc):
         else:
             label = ""
     
-    add_label_to_caption(numbering,label,elem,doc.pandoc_tex_numbering["tab_pref"].capitalize(),doc.pandoc_tex_numbering["pref_space"])
+    raw_caption = to_string(elem.caption)
+    prefix = doc.pandoc_tex_numbering["tab_pref"].capitalize()
+    add_label_to_caption(numbering,label,elem,prefix,doc.pandoc_tex_numbering["pref_space"])
     if label:
         doc.pandoc_tex_numbering["ref_dict"][label] = {
             "num": numbering,
             "type": "tab",
-            "caption": to_string(elem.caption),
+            "caption": raw_caption,
             "short_caption": to_string(elem.caption.short_caption)
         }
 
@@ -341,12 +389,14 @@ def _find_labels_figure(elem,doc,subfigure=False):
         caption_numbering = numbering
         prefix = doc.pandoc_tex_numbering["fig_pref"].capitalize()
         pref_space = doc.pandoc_tex_numbering["pref_space"]
+    
+    raw_caption = to_string(elem.caption)
     add_label_to_caption(caption_numbering,label,elem,prefix,pref_space)
     if label:
         doc.pandoc_tex_numbering["ref_dict"][label] = {
             "num": numbering,
             "type": "fig",
-            "caption": to_string(elem.caption),
+            "caption": raw_caption,
             "short_caption": to_string(elem.caption.short_caption),
             "subfigure": subfigure
         }
@@ -362,6 +412,12 @@ def action_find_labels(elem, doc):
         find_labels_figure(elem,doc)
     if isinstance(elem,Table) and doc.pandoc_tex_numbering["num_tab"]:
         find_labels_table(elem,doc)
+    if isinstance(elem,RawBlock) and (doc.pandoc_tex_numbering["custom_lof"] or doc.pandoc_tex_numbering["custom_lot"]) and elem.format == "latex":
+        if "listoffigures" in elem.text:
+            doc.pandoc_tex_numbering["lof_block"] = elem
+        if "listoftables" in elem.text:
+            doc.pandoc_tex_numbering["lot_block"] = elem
+            
 
 def cleveref_numbering(numbering_info,doc,capitalize=False):
     label_type = numbering_info["type"]
