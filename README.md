@@ -289,7 +289,7 @@ In `oxml.py`, I added a built-in framework to support high-level OOXML operation
 - **Q: Can the filter support complex caption macros such as `\bicaption`?**
 - **A**: No for now. Caption macros such as `\bicaption` are not supported by the default `latex` reader of pandoc. Therefore, we cannot parse them correctly. You may need a custom reader to parse them correctly or modify the source code before using this filter.
 - **Q: Can `docx` output support the short captions in the list of figures and tables?**
-- **A**: We can support this feature in the near future. This can be done by directly adding OOXML codes to the results, by which we can implement a totally customized TOC-like list of figures and tables to support any features we want.
+- **A**: Now supported.
 
 That said, however, functionalities mentioned above can never be supported easily since they are not, and maybe never will be, supported by native `pandoc` framework.
 
@@ -300,4 +300,4 @@ There are some known issues and possible improvements:
 - [x] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
 - [ ] Directly support `align*` and other non-numbered environments.
 - [x] Subfigure support.
-- [ ] Support short captions in `docx` output.
+- [x] Support short captions in `docx` output.
