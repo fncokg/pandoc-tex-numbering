@@ -1,3 +1,8 @@
+"""
+Module for creating a list of items in a Word document.
+
+Similar functionality can be achieved by adding files such as `html_list.py` to this filter.
+"""
 from .oxml import *
 from panflute import RawBlock
 
