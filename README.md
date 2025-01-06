@@ -31,6 +31,7 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
   - [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support)
   - [Custom Numbering Format](#custom-numbering-format)
   - [Extend the Filter](#extend-the-filter)
+  - [Advanced docx Support](#advanced-docx-support)
 - [FAQ](#faq)
 - [TODO](#todo)
 
@@ -254,6 +255,10 @@ To keep the design of the filter simple and easy to use, the filter only support
 The logical structure of the filter is quiet straightforward. You can see this filter as a scaffold for your own filter. For example, `_parse_multiline_environment` function receives a latex math node and the doc object and returns a new modified math string with the numbering and respective labels. You can add your customized latex syntax analysis logic to support more complicated circumstances.
 
 It is recommended to decalre all your possible variables in the `prepare` function, and save them in the `doc.pandoc_tex_numbering:dict` object. This object will be automatically destroyed after the filter is executed.
+
+## Advanced docx Support
+
+In `oxml.py`, I added a built-in framework to support high-level OOXML operations. If you're familiar with OOXML, you can utilize this framework to embed OOXML codes directly into the output (into `RawBlock` nodes with `openxml` format).
 
 # FAQ
 
