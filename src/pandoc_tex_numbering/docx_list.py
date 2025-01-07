@@ -6,7 +6,7 @@ Similar functionality can be achieved by adding files such as `html_list.py` to 
 from .oxml import *
 from panflute import RawBlock
 
-def docx_list_heading(title,style_name="TOCHeading",east_asian_lang=None):
+def docx_list_heading(title,style_name="TOC",east_asian_lang=None):
     # Create a paragraph with the specified style
     par = Paragraph()
     par_prop = ParagraphProperty()
@@ -38,7 +38,7 @@ def docx_list_body(items,leader_type="middleDot",style_name="TOC1",east_asian_la
 
     return RawBlock(par.to_string(),format="openxml")
 
-def add_docx_list(target_block,items,title,heading_style_name="TOCHeading",body_style_name="TOC1",leader_type="middleDot",east_asian_lang=None):
+def add_docx_list(target_block,items,title,heading_style_name="TOC",body_style_name="TOC1",leader_type="middleDot",east_asian_lang=None):
     parent = target_block.parent
     target_idx = parent.content.index(target_block)
 

@@ -1,3 +1,7 @@
+# 1.1.1 (2025-01-07)
+
+Use the correct style name (style id) for list of figures and tables.
+
 # 1.1.0 (2025-01-06)
 
 Custom list of figures and tables supporting **short captions* and custom titles.
