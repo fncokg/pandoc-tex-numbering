@@ -153,7 +153,7 @@ class ParagraphProperty(ElementProxy):
         style = self.get_or_create_child("w:pStyle")
         style.set_attrs({"w:val":style_name})
     
-    def set_tabs(self,tabs:list[TabStop]):
+    def set_tabs(self,tabs:list):
         self.remove_child("w:tabs")
         tabs_elem = ElementProxy("w:tabs")
         for tab in tabs:

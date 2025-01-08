@@ -1,3 +1,7 @@
+# 1.1.2 (2025-01-08)
+
+Fix #7: support compatibility with python >=3.8
+
 # 1.1.1 (2025-01-07)
 
 Use the correct style name (style id) for list of figures and tables.
