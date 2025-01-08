@@ -9,6 +9,8 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 - [Contents](#contents)
 - [What do we support?](#what-do-we-support)
 - [Installation](#installation)
+  - [From PyPI (Recommended)](#from-pypi-recommended)
+  - [From Source](#from-source)
 - [Quick Start](#quick-start)
 - [Customization](#customization)
   - [General](#general)
@@ -22,6 +24,7 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
   - [Equations](#equations-1)
   - [Sections](#sections)
   - [Figures and Tables](#figures-and-tables)
+  - [List of Figures and Tables](#list-of-figures-and-tables-1)
   - [Data Export](#data-export)
   - [Log](#log)
   - [`org` file support](#org-file-support)
@@ -45,15 +48,19 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 
 # Installation
 
-First, install `pandoc` and `python3` if you haven't.
+First, install `pandoc` and `python3` if you haven't. Then you can install the filter via one of the following methods:
 
-`pandoc-tex-numbering` can be installed via `pip`:
+## From PyPI (Recommended)
+
+In Python>=3.8 `pandoc-tex-numbering` can be installed via `pip`:
 
 ```bash
 pip install pandoc-tex-numbering
 ```
 
-You can also download the source code manually and put it in the same directory as your source file. In this case, when using the filter, you should specify the filter file via `-F pandoc-tex-numbering.py` instead of `-F pandoc-tex-numbering`.
+## From Source
+
+**Only in case you want to use the filter with a lower version of Python (under 3.8)**, you can download the source code (i.e. all files under `src/pandoc_tex_numbering`) manually and put it in the same directory as your source file. In this case, when using the filter, you should specify the filter file via `-F pandoc-tex-numbering.py` instead of `-F pandoc-tex-numbering`.
 
 # Quick Start
 
@@ -104,12 +111,12 @@ To support short captions and custom titles in the list of figures and tables, y
 - `custom-lof`: Whether to use a custom list of figures. Default is `false`.
 - `custom-lot`: Whether to use a custom list of tables. Default is `false`.
 
-NOTE: **pass `-f latex+raw_tex` to the pandoc command if you want to put the lists at the correct position.** This is because the filter cannot get access to the position of the lists in the LaTeX source code unless the `raw_tex` extension is enabled. **If `raw_tex` is not enabled or the `\listoffigures` and `\listoftables` commands are not found, the lists will be put at the beginning of the document.**
-
 You can customize the list of figures and tables by setting the following metadata:
 - `lof-title`: The title of the list of figures. Default is "List of Figures".
 - `lot-title`: The title of the list of tables. Default is "List of Tables".
 - `list-leader-type`: The type of leader used in the list of figures and tables (placeholders between the caption and the page number). Default is "dots". Possible values are "dot", "hyphen", "underscore", "middleDot" and "none".
+
+For more details, see the [List of Figures and Tables](#list-of-figures-and-tables) section.
 
 ## Caption Renaming
 The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables (but they are not used in subfigures and subtables).
@@ -172,6 +179,16 @@ All the figures and tables are supported. All references to figures and tables a
 You can determine the prefix of figures and tables by changing the variables `figure-prefix` and `table-prefix` in the metadata, default values are "Figure" and "Table" respectively.
 
 All figures and captions without captions will be also added a caption like "Figure 1.1" or "Table 1.1" (without the colon).
+
+## List of Figures and Tables
+
+**Currently, this feature is only available for `docx` output with Python>=3.8.**
+
+If you set the metadata `custom-lof` and `custom-lot` to `true`, the filter will generate a custom list of figures and tables.
+
+The captions used in the list of figures and tables are the short captions if they are defined in the LaTeX source code. If not, the full captions are used. The short captions are defined in the LaTeX source code as `\caption[short caption]{full caption}`.
+
+The list of figures and tables will be put at the beginning of the document by default. If you want to put the lists at posistions where the `\listoffigures` and `\listoftables` commands are found in the LaTeX source code, you should pass `-f latex+raw_tex` to the pandoc command. However, currently, **`-f latex+raw_tex` does NOT work if you're using `subfiles` package.**.
 
 ## Data Export
 
