@@ -19,6 +19,9 @@ logger.setLevel(logging.INFO)
 
 MAX_LEVEL = 10
 
+def split_multiple_labels(labels,doc):
+    pass
+
 def to_string(elem):
     if isinstance(elem,Str):
         return elem.text
@@ -181,19 +184,29 @@ def finalize(doc):
     # Clean up the global variables
     del doc.pandoc_tex_numbering
 
-def _current_section(doc,level=1):
-    return ".".join(map(str,doc.pandoc_tex_numbering["current_sec"][:level]))
-
-def _current_numbering(doc,item="eq",subfigure=False):
-    reset_level = doc.pandoc_tex_numbering["num_reset_level"]
-    num = doc.pandoc_tex_numbering[f"current_{item}"]
-    if reset_level == 0:
-        num_str = str(num)
+def _current_nums(doc,item="eq",nlevels=None):
+    """
+    When num_rest_level is n, for `sec`, return nlevels numbers; for others, return n+2 numbers.
+    """
+    if item != "sec":
+        reset_level = doc.pandoc_tex_numbering["num_reset_level"]
+        current_sec = doc.pandoc_tex_numbering["current_sec"][:reset_level]
+        current_num = doc.pandoc_tex_numbering[f"current_{item}"]
+        current_subfig = doc.pandoc_tex_numbering["current_subfig"]
+        result = current_sec + [current_num] + [current_subfig]
     else:
-        sec = _current_section(doc,level=doc.pandoc_tex_numbering["num_reset_level"])
-        num_str = f"{sec}.{num}"
-    if subfigure:
-        num_str += doc.pandoc_tex_numbering["subfig_format"](doc.pandoc_tex_numbering["current_subfig"])
+        assert nlevels is not None
+        result = doc.pandoc_tex_numbering["current_sec"][:nlevels]
+    return result
+
+def _current_numbering(doc,item="eq",subfigure=False,nlevels=None):
+    nums = _current_nums(doc,item,nlevels)
+    if item == "sec":
+        num_str = ".".join(map(str,nums))
+    else:
+        num_str = ".".join(map(str,nums[:-1]))
+        if subfigure:
+            num_str += doc.pandoc_tex_numbering["subfig_format"](nums[-1])
     return num_str
 
 
@@ -219,7 +232,7 @@ def _parse_multiline_environment(root_node,doc):
                 if is_label_this_line:
                     environment_body += f"\\qquad{{({current_numbering})}}"
                     if label_of_this_line:
-                        labels[label_of_this_line] = current_numbering
+                        labels[label_of_this_line] = current_numbering, _current_nums(doc,"eq")
                     doc.pandoc_tex_numbering["current_eq"] += 1
                     current_numbering = _current_numbering(doc,"eq")
                 label_of_this_line = None
@@ -229,7 +242,7 @@ def _parse_multiline_environment(root_node,doc):
     if is_label_this_line:
         environment_body += f"\\qquad{{({current_numbering})}}"
         if label_of_this_line:
-            labels[label_of_this_line] = current_numbering
+            labels[label_of_this_line] = current_numbering, _current_nums(doc,"eq")
     modified_math_str = f"\\begin{{{root_node.environmentname}}}{environment_body}\\end{{{root_node.environmentname}}}"
     return modified_math_str,labels
 
@@ -242,7 +255,7 @@ def _parse_plain_math(math_str:str,doc):
     if len(label_strings) >= 2:
         logger.warning(f"Multiple label_strings in one math block: {label_strings}")
     for label in label_strings:
-        labels[label] = current_numbering
+        labels[label] = (current_numbering,_current_nums(doc,"eq"))
     return modified_math_str,labels
 
 def parse_latex_math(math_str:str,doc):
@@ -299,11 +312,12 @@ def find_labels_header(elem,doc):
     for child in elem.content:
         if isinstance(child,Span) and "label" in child.attributes:
             label = child.attributes["label"]
-            numbering = _current_section(doc,level=elem.level)
+            numbering = _current_numbering(doc,item="sec",nlevels=elem.level)
             doc.pandoc_tex_numbering["ref_dict"][label] = {
                 "num": numbering,
                 "level": elem.level,
-                "type": "sec"
+                "type": "sec",
+                "nums": _current_nums(doc,"sec",elem.level)
             }
     if doc.pandoc_tex_numbering["num_sec"]:
         elem.content.insert(0,Space())
@@ -313,10 +327,12 @@ def find_labels_math(elem,doc):
     math_str = elem.text
     modified_math_str,labels = parse_latex_math(math_str,doc)
     elem.text = modified_math_str
-    for label,numbering in labels.items():
+    for label,(numbering,nums) in labels.items():
         doc.pandoc_tex_numbering["ref_dict"][label] = {
             "num": numbering,
+            "nums": nums,
             "type": "eq"
+
         }
     if labels:
         this_elem = elem
@@ -357,7 +373,8 @@ def find_labels_table(elem,doc):
             "num": numbering,
             "type": "tab",
             "caption": raw_caption,
-            "short_caption": to_string(elem.caption.short_caption)
+            "short_caption": to_string(elem.caption.short_caption),
+            "nums": _current_nums(doc,"tab")
         }
 
 def find_labels_figure(elem,doc):
@@ -398,7 +415,8 @@ def _find_labels_figure(elem,doc,subfigure=False):
             "type": "fig",
             "caption": raw_caption,
             "short_caption": to_string(elem.caption.short_caption),
-            "subfigure": subfigure
+            "subfigure": subfigure,
+            "nums": _current_nums(doc,"fig")
         }
 
 def action_find_labels(elem, doc):
@@ -459,6 +477,7 @@ def action_replace_refs(elem, doc):
             logger.warning(f"Currently only support one label in reference: {labels}")
 
 def main(doc=None):
+    logger.info("Starting pandoc-tex-numbering")
     return run_filters([action_find_labels ,action_replace_refs], doc=doc,prepare=prepare, finalize=finalize)
 
 if __name__ == '__main__':
