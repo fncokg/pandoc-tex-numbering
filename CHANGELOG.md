@@ -1,3 +1,7 @@
+# 1.2.1 (2025-01-13)
+
+Fix a severe numbering logic bug in the previous version. Now the numbering system should work as expected.
+
 # 1.2.0 (2025-01-13)
 
 Rewrite the low-level numbering system (switch to a OOP design). Now we support:
