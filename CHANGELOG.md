@@ -1,3 +1,20 @@
+# 1.2.0 (2025-01-13)
+
+Rewrite the low-level numbering system (switch to a OOP design). Now we support:
+
+- Full-featured formatting for the numbering system
+- OOP designed API for the numbering system, which is much easier to extend
+
+## Migration Guide
+For people who are using 1.1.x version, there are some **deprecations** and **removals**:
+
+The following metadata keys are now deprecated, and you are recommended to use the new keys instead (the old keys are still supported until v1.3.0):
+- metadata keys `section-format-source-i` and `section-format-ref-i` for the i-the level section numbering formatting are now deprecated. You should use the new `section-src-format-i` and `section-cref-format-i` keys instead. For backward compatibility, the old keys are still supported until the next major release (1.3.0).
+
+The following features are now **removed**, and you should use the new API instead:
+- metadata keys `subfigure-format` is now removed considering its ambiguity. You should use the new unified metadata keys `subfigure-src-format` and `subfigure-cref-format` instead.
+- fields `num` and `sym` in `subfigure-format` are (of course) now removed. The new fields `subfig_id` and `subfig_sym` should be used instead.
+
 # 1.1.2 (2025-01-08)
 
 Fix #7: support compatibility with python >=3.8

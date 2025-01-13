@@ -1,8 +1,5 @@
 # pandoc-tex-numbering
-This is an all-in-one pandoc filter especially for LaTeX files to keep **numbering, hyperlinks, caption prefixs and cross references in (maybe multi-line) equations, sections, figures, and tables**.
-
-With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any format pandoc supported, especially `.docx`, while **keep all your auto-numberings and cross references**.
-
+This is an all-in-one pandoc filter for converting your LaTeX files to any format while keeping **numbering, hyperlinks, caption formats and (clever) cross references in (maybe multi-line) equations, sections, figures, and tables**. The formating is highly customizable, easy-to-use, and even more flexible than the LaTeX default.
 
 # Contents
 - [pandoc-tex-numbering](#pandoc-tex-numbering)
@@ -14,16 +11,15 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 - [Quick Start](#quick-start)
 - [Customization](#customization)
   - [General](#general)
+  - [Formatting System](#formatting-system)
+    - [Prefix-based System](#prefix-based-system)
+    - [Custom Formatting System (f-string formatting)](#custom-formatting-system-f-string-formatting)
+      - [Metadata Names](#metadata-names)
+      - [Metadata Values](#metadata-values)
   - [Equations](#equations)
-  - [`cleveref` Support](#cleveref-support)
-  - [Custom Section Numbering Format](#custom-section-numbering-format)
-  - [Subfigure Support](#subfigure-support)
   - [List of Figures and Tables](#list-of-figures-and-tables)
-  - [Caption Renaming](#caption-renaming)
 - [Details](#details)
   - [Equations](#equations-1)
-  - [Sections](#sections)
-  - [Figures and Tables](#figures-and-tables)
   - [List of Figures and Tables](#list-of-figures-and-tables-1)
   - [Data Export](#data-export)
   - [Log](#log)
@@ -45,6 +41,7 @@ With `pandoc-tex-numbering`, you can convert your LaTeX source codes to any form
 - **Subfigures**: `subcaption` package is supported. Subfigures can be numbered with customized symbols and formats.
 - **Non-Arabic Numbers**: Chinese numbers "第一章", "第二节" etc. are supported. You can customize the numbering format.
 - **Custom List of Figures and Tables**: **Short captions** as well as custom lof/lot titles are supported for figures and tables.
+- **Custom Formatting of Everything**: You can customize the format of the numbering and references with python f-string format based on various fields we provide.
 
 # Installation
 
@@ -80,31 +77,66 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `number-equations`: Whether to number the equations. Default is `true`.
 - `number-sections`: Whether to number the sections. Default is `true`.
 - `number-reset-level`: The level of the section that will reset the numbering. Default is 1. For example, if the value is 2, the numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
+- `section-max-levels`: The maximum level of the section numbering. Default is 10.
 - `data-export-path`: Where to export the filter data. Default is `None`, which means no data will be exported. If set, the data will be exported to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter-debugging.
 - `auto-labelling`: Whether to automatically add identifiers (labels) to figures and tables without labels. Default is `true`. This has no effect on the output appearance but can be useful for cross-referencing in the future (for example, in the `.docx` output this will ensure that all your figures and tables have a unique auto-generated bookmark).
 
-## Equations
-- `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
+## Formatting System
 
-## `cleveref` Support
-Currently, pandoc's default LaTeX reader does not support `\crefname` and `\Crefname` commands (they are not visible in the AST for filters). To support cleveref package, you can set the following metadata:
+We support a very flexible formatting system for the numbering and references. There are two different formatting systems for the numbering and references. You can use them together. The two systems are:
+
+- Prefix-based System: This is lightweight and easy to use. When referenced, a corresponding prefix will automatically added to the number.
+- Custom Formatting System: This is more flexible and powerful. You can customize the format of the numbering and references with python f-string format based on various fields we provide.
+
+### Prefix-based System
+The following metadata are used for the prefix-based system:
 - `figure-prefix`: The prefix of the figure reference. Default is "Figure".
 - `table-prefix`: The prefix of the table reference. Default is "Table".
 - `equation-prefix`: The prefix of the equation reference. Default is "Equation".
 - `section-prefix`: The prefix of the section reference. Default is "Section".
 - `prefix-space`: Whether to add a space between the prefix and the number. Default is `true` (for some languages, the space may not be needed).
 
-**Note: multiple references are not supported currently.** Try to use `Figures \ref{fig:1} and \ref{fig:2}` instead of `\cref{fig:1,fig:2}` for now.
+### Custom Formatting System (f-string formatting)
 
-## Custom Section Numbering Format
-For the section numbering, you can customize the format of the section numbering added at the beginning of the section titles and used in the references. The following metadata are used. For more details, see the [Details of Sections](#sections) section.
-- `section-format-source-1`, `section-format-source-2`,...: The format of the section numbering at each level. Default is `"{h1}"`, `"{h1}.{h2}"` etc.
-- `section-format-ref-1`, `section-format-ref-2`,...: The format of the section numbering used in the references. **If set, this will override the `section-prefix` metadata**. Default is `"{h1}"`, `"{h1}.{h2}"`, etc. combined with the `section-prefix` and `prefix-space` metadata.
+#### Metadata Names
+For now, we support 5 types of items and 4 types of formatting:
+- Item types: `fig` (figure), `tab` (table), `eq` (equation), `sec` (section), `subfig` (subfigure).
+- Formatting types: 
+  - `src` (source): The format of the numbering where the item appears. For figures and tables, this is the format used in the captions. For equations, this is the format used after the equations. For sections, this is the format used at the beginning of the section titles.
+  - `ref` (reference): The format of numbering used in `\ref` command.
+  - `cref` (cleveref reference)/`Cref` (Cleveref reference with capital letter): The format of numbering used in `\cref` and `\Cref` commands.
 
-## Subfigure Support
-You can use the `subcaption` package to create subfigures. The filter will automatically number the subfigures. You can customize the subfigure numbering by setting the following metadata:
-- `subfigure-symbols`: The symbols used for subfigure numbering. Default is `"abcdefghijklmnopqrstuvwxyz"`. The symbols will be used in the order specified. You must ensure that the number of symbols is greater than or equal to the number of subfigures in a figure.
-- `subfigure-format`: The format of the subfigures used in captions and references. This is a python f-string format similar to the section numbering format. Default is `"{sym}"`. The available fields are `sym` and `num`. `sym` is the symbol of the subfigure and `num` is the number of the subfigure. For example, if you set `subfigure-format="({sym})"`(i.e. parentheses around the symbol), the subfigures will be shown as "(a)", "(b)" etc. in the captions and references.
+You can customize the formatting type `b` of the item type `a` by setting the metadata `a-b-format`. For example, to customize the numbering format of figure captions, you set the `fig-src-format` metadata.
+
+By default, **if not specified**, the `Cref` format will be the capitalized version of the `cref` format, the `src` format will be the same as the `Cref` format, the `ref` format will be `"{num}"`, and the `cref` format will be `"{prefix}{num}"`.
+
+For sections, every level has its own formatting. You can set the metadata, for example, `section-src-format-1`, `section-cref-format-2`, etc.
+
+#### Metadata Values
+The metadata values are python f-string format strings. Various fields are provided for you to customize the format. For example, if you set the `number-reset-level` to 2, `figure-prefix` to `figure` and `prefix-space` to `True`. Then, the fifth figure under subsection 2.3 will have the following fields:
+- `num`: `2.3.5`
+- `parent_num`: `2.3`
+- `fig_id`: `5`
+- `prefix`: `figure ` (note the space at the end)
+- `Prefix`: `Figure `
+- `h1`: `2`
+- `h2`: `3`
+- `h1_zh`: `二` (Chinese number support)
+- `h2_zh`: `三`
+
+For the subfigures, a special field `subfig_sym` is provided to represent the symbol of the subfigure. For example, if you set the `subfigure-symbols` metadata to `"αβγδ"`, the second subfigure will have the `subfig_sym` field as `"β"` while the `subfig_id` field as `2`.
+
+Here are some examples of the metadata values:
+- set the `fig-src-format` metadata to `"{prefix}{num}"`, the numbering before its caption will be shown as "Figure 2.3.5"
+- set the `fig-cref-format` metadata to `"{Prefix} {fig_id} (in Section {parent_num})"`, when referred to by `\Cref`, it will be shown as `"Figure 5 (in Section 2.3)"`.
+- set the `section-src-format-1` metadata to `"第{h1_zh}章"` and `section-cref-format-1` to `"第{h1_zh}章"` to use Chinese numbers for the first level sections.
+
+For more non-arabic number support, see the [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support) section.
+
+For more examples, see also the [Customized Metadata Examples](#customized-metadata).
+
+## Equations
+- `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
 
 ## List of Figures and Tables
 To support short captions and custom titles in the list of figures and tables, you can set the following metadata to turn on the custom list of figures and tables:
@@ -117,9 +149,6 @@ You can customize the list of figures and tables by setting the following metada
 - `list-leader-type`: The type of leader used in the list of figures and tables (placeholders between the caption and the page number). Default is "dots". Possible values are "dot", "hyphen", "underscore", "middleDot" and "none".
 
 For more details, see the [List of Figures and Tables](#list-of-figures-and-tables) section.
-
-## Caption Renaming
-The `figure-prefix` and `table-prefix` metadata are also used to rename the captions of figures and tables (but they are not used in subfigures and subtables).
 
 # Details
 
@@ -158,28 +187,6 @@ This equation will be numbered line by line, say, (1.2), (1.3) and (1.4), while 
 
 **NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment via the `*` mark. If you do want to turn off the numbering of a specific `align` environment, a temporary solution is to manually add `\nonumber` commands to every line of the environment. *This may be fixed by a custom lua reader to keep those information in the future.*
 
-## Sections
-
-If metadata `number-sections` is set to `true`, all the sections will be numbered. The numbers are added at the beginning of the section titles and the references to the sections are replaced by their numbers.
-
-You can customize the format of the section numbering added at the beginning of the section titles and used in the references by setting the metadata `section-format-source-1`, `section-format-source-2`, etc. and `section-format-ref-1`, `section-format-ref-2`, etc. All of these metadata accept a python f-string format with fields `h1`, `h2`, ..., `h10` representing the numbers of each level headers. 
-
-For example, to add a prefix "Chapter" and a suffix "." to the first-level section, you can set `section-format-source-1` to `"Chapter {h1}."`. At the beginning of the first-level section, it will be shown as "Chapter 1.". And if you also want to add the prefix "Chapter" to the references, but without the suffix ".", you can set `section-format-ref-1` to `"Chapter {h1}"`. Then, when a first-level section is referred to, it will be shown as "Chapter 1".
-
-The default values of `section-format-source-1`, `section-format-source-2`, etc. are in fact `{h1}`, `{h1}.{h2}`, etc. respectively, and the default values of `section-format-ref-1`, `section-format-ref-2`, etc. are in fact `{h1}`, `{h1}.{h2}` combined with the `section-prefix` and `prefix-space` metadata respectively.
-
-Sometimes, non arabic numberings are needed. For example, in Chinese, with `section-format-source-1="第{h1}章"`, the users get "第1章", "第2章" etc. However, sometimes the users may need "第一章", "第二章" etc. To achieve this, we also support non arabic numbers by series of **non-arabic fields**. For example, when `{h1}` is 12, the Chinese number field `{h1_zh}` will be "十二".
-
-Note that: The current version only supports simplified Chinese numbers. If you need other languages, you can modify the `lang_num.py` file. See the [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support) section for more details.
-
-## Figures and Tables
-
-All the figures and tables are supported. All references to figures and tables are replaced by their numbers, and all the captions are added prefixs such as "Figure 1.1: ".
-
-You can determine the prefix of figures and tables by changing the variables `figure-prefix` and `table-prefix` in the metadata, default values are "Figure" and "Table" respectively.
-
-All figures and captions without captions will be also added a caption like "Figure 1.1" or "Table 1.1" (without the colon).
-
 ## List of Figures and Tables
 
 **Currently, this feature is only available for `docx` output with Python>=3.8.**
@@ -192,11 +199,7 @@ The list of figures and tables will be put at the beginning of the document by d
 
 ## Data Export
 
-If you set the metadata `data-export-path` to a path, the filter will export the filter data to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter debugging. The output data is a dictionary with identifiers (labels) as keys and the corresponding data as values.
-
-All kinds of identifiers have the following common keys: `num: str` and `type: Literal["fig", "tab", "eq", "sec"]`. For sections, there is an additional key `level: int` representing the level of the section. For tables and figures, there is additional keys `caption: str` and `short_caption: str` representing the full caption and the short caption defined in the LaTeX source code.
-
-Note: currently, short captions defined via `\caption[short caption]{full caption}` are not supported for `docx` output, but the filter will export them for your further usage.
+If you set the metadata `data-export-path` to a path, the filter will export the filter data to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter debugging. The output data is a dictionary with identifiers (labels) as keys and the corresponding data as values. The info dict contains the following keys: `nums: list[int]`, `item_type: Literal["fig", "tab", "eq", "sec", "subfig"]`, `caption: Optional[str]`, `short_caption: Optional[str]`, `src: str`, `ref: str`, `cref: str`, `Cref: str`.
 
 ## Log
 
@@ -208,12 +211,12 @@ Some warning message will be shown in the log file named `pandoc-tex-numbering.l
 `org` files are supported by adding an additional lua filter `src\org_helper.lua` to the pandoc command. The usage is as follows:
 
 ```bash
-pandoc --lua-filter org_helper.lua --filter pandoc-tex-numbering.py input.org -o output.docx
+pandoc --lua-filter org_helper.lua --filter pandoc-tex-numbering input.org -o output.docx
 ```
 
-**Be sure to use `--lua-filter org_helper.lua` before `--filter pandoc-tex-numbering.py`**.
+**Be sure to use `--lua-filter org_helper.lua` before `--filter pandoc-tex-numbering`**.
 
-Reason for this is the default `org` reader of `pandoc` does not parse LaTeX codes by default, for example, LaTeX equations in `equation` environments and cross references via `\ref{}` macros are parsed as `RawBlock` and `RawInline` nodes, while we desire `Math` nodes and `Link` nodes respectively. The `org_helper.lua` filter helps read these blocks via `latex` reader and after that, the `pandoc-tex-numbering.py` filter can work as expected.
+Reason for this is the default `org` reader of `pandoc` does not parse LaTeX codes by default, for example, LaTeX equations in `equation` environments and cross references via `\ref{}` macros are parsed as `RawBlock` and `RawInline` nodes, while we desire `Math` nodes and `Link` nodes respectively. The `org_helper.lua` filter helps read these blocks via `latex` reader and after that, the `pandoc-tex-numbering` filter can work as expected.
 
 Related discussions can also be found in [pandoc issue #1764](https://github.com/jgm/pandoc/issues/1764) (codes in `org_helper.lua` are based on comments from @tarleb in this issue) and [pandoc-tex-numbering issue #1](https://github.com/fncokg/pandoc-tex-numbering/issues/1).
 
@@ -234,15 +237,26 @@ The results are shown as follows:
 
 ## Customized Metadata
 
-In the following example, we custom the following (maybe silly) items *only for the purpose of demonstration*:
-- Use all prefixes as "Fig", "Tab", "Eq" respectively.
+In the following example, we custom the following **silly** items *only for the purpose of demonstration*:
 - Reset the numbering at the second level sections, such that the numbering will be shown as "1.1.1", "3.2.1" etc.
-- At the beginning of sections, use Chinese numbers "第一章" for the first level sections and English numbers "Section 1.1" for the second level sections.
-- When referred to, use, in turn, "Chapter 1", "第1.1节" etc.
-- For subfigures, use greek letters combined with arabic numbers and replace the parentheses with square brackets, such that the subfigures will be shown as "[α1]", "[β2]" etc.
+- The formattings are set as follows:
+  - For sections:
+    - at the beginning of sections, use Chinese numbers "第一章" for the first level sections and English numbers "Section 1.1" for the second level sections.
+    - when referred to, use, in turn, "Chapter 1", "第1.1节" etc.
+  - For tables:
+    - at the beginning of captions, use styles like `Table 1-1-1`
+    - when referred to, use styles like `table 1 (in Section 1.1)`
+  - For figures:
+    - at the beginning of captions, use styles like `Figure 1.1:1`
+    - when referred to, use styles like `as shown in Fig. 1.1.1,`
+  - For equations, at the end of equations, use styles like `(1-1-1)`
+  - For subfigures:
+    - use greek letters for symbols
+    - at the beginning of captions, use styles like `[β(1)]`
 - Turn on custom list of figures and tables and:
   - Use custom titles as "图片目录" and "Table Lists" respectively.
   - Use hyphens as the leader in the lists.
+- Export the filter data to a file named `data.json`.
 
 Run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
 
@@ -257,17 +271,23 @@ table-prefix: Tab
 equation-prefix: Eq
 number-reset-level: 2
 non-arabic-numbers: true
-section-format-source-1: "第{h1_zh}章"
-section-format-source-2: "Section {h1}.{h2}."
-section-format-ref-1: "Chapter {h1}"
-section-format-ref-2: "第{h1}.{h2}节"
-subfigure-format: "[{sym}({num})]"
+section-src-format-1: "第{h1_zh}章"
+section-src-format-2: "Section {h1}.{h2}."
+section-cref-format-1: "chapter {h1}"
+section-cref-format-2: "第{h1}.{h2}节"
+table-src-format: "Table {h1}-{h2}-{tab_id}"
+table-cref-format: "table {tab_id} (in Section {h1}.{h2})"
+figure-src-format: "Figure {h1}.{h2}:{fig_id}"
+figure-cref-format: "as shown in Fig. {num},"
+equation-src-format: "({h1}-{h2}-{eq_id})"
+subfigure-src-format: "[{subfig_sym}({subfig_id})]"
 subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
 custom-lot: true
 custom-lof: true
 lot-title: "Table List"
 lof-title: "图片目录"
 list-leader-type: "hyphen"
+data-export-path: "data.json"
 ```
 
 The results are shown as follows:

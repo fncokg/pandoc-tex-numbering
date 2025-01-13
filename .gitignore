@@ -6,4 +6,5 @@
 **/__pycache__
 tests/test.json
 tests/test2.tex
+tests/data.json
 dist/
