@@ -159,7 +159,7 @@ class NumberingState:
     def next_sec(self,level):
         self.sec[level-1] += 1
         self.sec[level:] = [0]*(len(self.sec)-level)
-        if level >= self.reset_level:
+        if level <= self.reset_level:
             self.eq = 0
             self.tab = 0
             self.fig = 0
