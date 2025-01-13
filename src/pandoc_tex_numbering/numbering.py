@@ -118,6 +118,13 @@ class Numbering:
             data["short_caption"] = self.short_caption
         return data
     
+    def is_next_of(self,value):
+        if self.item_type != value.item_type:
+            return False
+        if len(self.nums) != len(value.nums):
+            return False
+        return self.nums[:-1] == value.nums[:-1] and self.nums[-1] == value.nums[-1]+1
+    
     def __eq__(self, value):
         return self.item_type == value.item_type and self.nums == value.nums
     
@@ -128,7 +135,16 @@ class Numbering:
             for i in range(min(len(self.nums),len(value.nums))):
                 if self.nums[i] != value.nums[i]:
                     return self.nums[i] > value.nums[i]
-            return len(self.nums) > len(value.nums)
+            return len(self.nums) < len(value.nums)
+    
+    def __lt__(self, value):
+        return (not self.__gt__(value)) and (not self.__eq__(value))
+    
+    def __repr__(self):
+        return f"Numbering({str(self)})"
+    
+    def __str__(self):
+        return f"{self.item_type}: {'.'.join(map(str,self.nums))}"
 
 class NumberingState:
     def __init__(self,formaters:dict,reset_level=1,max_levels=10):
@@ -180,28 +196,60 @@ class NumberingState:
             return Numbering("subfig",self.current_sec_nums+[self.fig,self.subfig],self.formaters["subfig"])
         else:
             return Numbering("fig",self.current_sec_nums+[self.fig],self.formaters["fig"])
-            
+
+def numberings2chunks(numberings,split_continous=True):
+    numberings = sorted(numberings)
+    chunks = {}
+    for num in numberings:
+        item_type = num.item_type
+        if not item_type in chunks:
+            chunks[item_type] = [[num]]
+            continue
+        last_chunk = chunks[item_type][-1]
+        if num.is_next_of(last_chunk[-1]):
+            last_chunk.append(num)
+        else:
+            chunks[item_type].append([num])
+    if not split_continous:
+        for item_type in chunks:
+            chunks[item_type] = [[chunk for chunks in chunks[item_type] for chunk in chunks]]
+    return chunks
 
 if __name__ == "__main__":
-    sec_num_fmts = ["{num}"]*10
-    sec_ref_fmts = [prefix2ref_fmt("Section")]*10
-    state = NumberingState(sec_num_fmts=sec_num_fmts,sec_ref_fmts=sec_ref_fmts,subfig_syms=["a","b","c","d","e","f","g","h","i","j"])
-    state.next_sec(1)
-    state.next_sec(2)
-    state.next_sec(3)
-    state.next_eq()
-    state.next_tab()
-    state.next_fig()
-    state.next_subfig()
-    state.next_subfig()
-    state.next_subfig()
-    print(state.current_sec(1).num)
-    print(state.current_sec(2).num)
-    print(state.current_sec(3).ref)
-    print(state.current_eq().ref)
-    print(state.current_tab().Ref)
-    print(state.current_fig().Ref)
-    print(state.current_fig(subfig=True).num)
-    print(state.current_fig(subfig=True).ref)
-    print(state.current_fig(subfig=True).Ref)
-    print(state.current_fig(subfig=True).to_dict())
+    numberings = [
+        Numbering("sec",[1,2,3],None),
+        Numbering("sec",[1,2,6],None),
+        Numbering("sec",[1,2,4],None),
+
+        Numbering("eq",[1,5],None),
+        Numbering("eq",[1,2],None),
+        Numbering("eq",[1,3],None),
+
+        Numbering("tab",[1,2],None),
+        Numbering("tab",[1,3],None),
+        Numbering("tab",[1,1],None),
+    ]
+    chunks = numberings2chunks(numberings,False)
+    print(chunks)
+    # sec_num_fmts = ["{num}"]*10
+    # sec_ref_fmts = [prefix2ref_fmt("Section")]*10
+    # state = NumberingState(sec_num_fmts=sec_num_fmts,sec_ref_fmts=sec_ref_fmts,subfig_syms=["a","b","c","d","e","f","g","h","i","j"])
+    # state.next_sec(1)
+    # state.next_sec(2)
+    # state.next_sec(3)
+    # state.next_eq()
+    # state.next_tab()
+    # state.next_fig()
+    # state.next_subfig()
+    # state.next_subfig()
+    # state.next_subfig()
+    # print(state.current_sec(1).num)
+    # print(state.current_sec(2).num)
+    # print(state.current_sec(3).ref)
+    # print(state.current_eq().ref)
+    # print(state.current_tab().Ref)
+    # print(state.current_fig().Ref)
+    # print(state.current_fig(subfig=True).num)
+    # print(state.current_fig(subfig=True).ref)
+    # print(state.current_fig(subfig=True).Ref)
+    # print(state.current_fig(subfig=True).to_dict())

@@ -9,7 +9,7 @@ from panflute import *
 from pylatexenc.latexwalker import LatexWalker,LatexEnvironmentNode,LatexMacroNode
 
 from .docx_list import add_docx_list
-from .numbering import NumberingState,Formater
+from .numbering import NumberingState,Formater,numberings2chunks
 
 logger = logging.getLogger('pandoc-tex-numbering')
 hdlr = logging.FileHandler('pandoc-tex-numbering.log')
@@ -57,6 +57,8 @@ def prepare(doc):
         "auto_labelling": doc.get_metadata("auto-labelling", True),
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
+
+        "ref_suppress_continous": doc.get_metadata("ref-suppress-continous", False),
 
         # custom list of figures and tables
         "custom_lof": doc.get_metadata("custom-lof", False),
@@ -424,10 +426,12 @@ def action_replace_refs(elem, doc):
             else:
                 logger.warning(f"Reference not found: {label}")
         else:
+            results = labels2refs(labels,elem.attributes['reference-type'],doc)
+            logger.info(f"Results: {results}")
             logger.warning(f"Currently only support one label in reference: {labels}")
 
 def main(doc=None):
-    logger.info("Starting pandoc-tex-numbering v1.2.0")
+    logger.info("Starting pandoc-tex-numbering")
     return run_filters([action_find_labels ,action_replace_refs], doc=doc,prepare=prepare, finalize=finalize)
 
 if __name__ == '__main__':
