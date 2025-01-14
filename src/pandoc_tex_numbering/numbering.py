@@ -43,10 +43,6 @@ def nums2fields(nums,item_type,ids2syms=None,prefix=None,pref_space=True):
 
 class Formater:
     def __init__(self,fmt_presets,item_type,ids2syms=None,prefix=None,pref_space=True):
-        if fmt_presets["Cref"] is None:
-            fmt_presets["Cref"] = fmt_presets["cref"].capitalize()
-        if fmt_presets["src"] is None:
-            fmt_presets["src"] = fmt_presets["Cref"]
         self.fmt_presets = fmt_presets
         self.item_type = item_type
         self.ids2syms = ids2syms
@@ -57,8 +53,13 @@ class Formater:
         if not fmt_preset is None:
             assert fmt_preset in self.fmt_presets, f"Invalid format type: {fmt_preset}"
             fmt = self.fmt_presets[fmt_preset]
-        assert not fmt is None, "No format provided"
-
+        if fmt is None:
+            if fmt_preset == "Cref":
+                return self(nums,fmt_preset="cref").capitalize()
+            elif fmt_preset == "src":
+                return self(nums,fmt_preset="Cref")
+            else:
+                raise ValueError("No valid format provided")
         fields = nums2fields(nums,self.item_type,self.ids2syms,self.prefix,self.pref_space)
         if isinstance(fmt,str):
             return fmt.format(**fields)
