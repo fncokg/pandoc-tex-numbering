@@ -1,15 +1,4 @@
 from .lang_num import language_functions
-def prefix2ref_fmt(prefix,has_space=True,capitalize=False,only_prefix=False):
-    if capitalize:
-        prefix = prefix.capitalize()
-    else:
-        prefix = prefix.lower()
-    if has_space:
-        prefix += " "
-    if only_prefix:
-        return prefix
-    else:
-        return f"{prefix}{{num}}"
 
 def header_fields(header_nums):
     fields = {
@@ -30,7 +19,7 @@ def nums2fields(nums,item_type,ids2syms=None,prefix=None,pref_space=True):
         prefix = prefix.strip()
         prefix = prefix + " " if pref_space else prefix
         common_fields.update({
-            "prefix": prefix,
+            "prefix": prefix.lower(),
             "Prefix": prefix.capitalize()
         })
     if item_type == "sec":
@@ -216,18 +205,18 @@ def numberings2chunks(numberings,split_continous=True):
     return chunks
 
 if __name__ == "__main__":
+    print(Numbering("sec",[3]).is_next_of(Numbering("sec",[2,1])))
     numberings = [
-        Numbering("sec",[1,2,3],None),
-        Numbering("sec",[1,2,6],None),
-        Numbering("sec",[1,2,4],None),
+        Numbering("sec",[2,1],None),
+        Numbering("sec",[3],None),
 
-        Numbering("eq",[1,5],None),
-        Numbering("eq",[1,2],None),
-        Numbering("eq",[1,3],None),
+        # Numbering("eq",[1,5],None),
+        # Numbering("eq",[1,2],None),
+        # Numbering("eq",[1,3],None),
 
-        Numbering("tab",[1,2],None),
-        Numbering("tab",[1,3],None),
-        Numbering("tab",[1,1],None),
+        # Numbering("tab",[1,2],None),
+        # Numbering("tab",[1,3],None),
+        # Numbering("tab",[1,1],None),
     ]
     chunks = numberings2chunks(numberings,False)
     print(chunks)

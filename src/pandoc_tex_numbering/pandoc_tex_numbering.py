@@ -74,6 +74,7 @@ def prepare(doc):
             "labels": []
         },
         "tabs2wrap": [],
+        "links2replace": [],
 
         "lof_block": None,
         "lot_block": None
@@ -190,6 +191,13 @@ def finalize(doc):
             del parent.content[idx]
             div = Div(tab,identifier=label)
             parent.content.insert(idx,div)
+    
+    for link,items in doc.pandoc_tex_numbering["links2replace"]:
+        parent = link.parent
+        idx = parent.content.index(link)
+        del parent.content[idx]
+        for item in items[::-1]:
+            parent.content.insert(idx,item)
 
     if doc.pandoc_tex_numbering["custom_lot"]:
         if not doc.pandoc_tex_numbering["lot_block"]:
@@ -404,31 +412,86 @@ def action_find_labels(elem, doc):
             doc.pandoc_tex_numbering["lof_block"] = elem
         if "listoftables" in elem.text:
             doc.pandoc_tex_numbering["lot_block"] = elem
+def _num2link(num_obj,fmt_preset):
+    return Link(Str(num_obj.format(fmt_preset=fmt_preset)),url=f"#{num_obj.label}")
+
+def labels2refs(labels,ref_type,doc):
+    assert ref_type in ["ref","ref+label","ref+Label","eqref"], f"Unknown reference-type: {ref_type}"
+    num_objs = []
+    for label in list(set(labels)):
+        if label in doc.ref_dict:
+            num_obj = doc.ref_dict[label]
+            num_obj.label = label
+            num_objs.append(num_obj)
+        else:
+            logger.warning(f"Reference not found: {label}")
+
+    is_suppress = doc.pandoc_tex_numbering["ref_suppress_continous"]
+    chunks = numberings2chunks(num_objs,split_continous=is_suppress)
+    
+    first_fmt_preset = {
+        "ref":"ref",
+        "eqref":"ref",
+        "ref+label":"cref",
+        "ref+Label":"Cref"
+    }[ref_type]
+    results_list = []
+    item_types = list(chunks.keys())
+    for i_item_type,item_type in enumerate(item_types):
+        
+        if i_item_type != 0 and first_fmt_preset == "Cref":
+            first_fmt_preset = "cref"
+        
+        item_results = []
+
+        chunk_list = chunks[item_type]
+        for ichunk,chunk in enumerate(chunk_list):
+            if ichunk == 0:
+                chunk_first_fmt_preset = first_fmt_preset
+            else:
+                chunk_first_fmt_preset = "ref"
+
+            if len(chunk) == 1:
+                chunk_result = [_num2link(chunk[0],chunk_first_fmt_preset)]
+            elif is_suppress:
+                chunk_result = [
+                    _num2link(chunk[0],chunk_first_fmt_preset),
+                    Str("-"),
+                    _num2link(chunk[-1],"ref")
+                ]
+            else:
+                chunk_result = [
+                    _num2link(chunk[0],chunk_first_fmt_preset),
+                ]
+                for num_obj in chunk[1:]:
+                    chunk_result.extend([
+                        Str(", "),
+                        _num2link(num_obj,"ref"),
+                    ])
+            if len(item_results)!=0:
+                item_results.append(Str(", "))
+            item_results.extend(chunk_result)
+        if len(item_results) >= 3:
+            item_results[-2] = Str(" and ")
+        results_list.append(item_results)
+    results = []
+    n_item_types = len(results_list)
+    for idx,item_results in enumerate(results_list):
+        if idx != 0:
+            if idx == n_item_types - 1:
+                results.append(Str(", and "))
+            else:
+                results.append(Str(", "))
+        results.extend(item_results)
+    return results
+
 
 def action_replace_refs(elem, doc):
     if isinstance(elem, Link) and 'reference-type' in elem.attributes:
         labels = elem.attributes['reference'].split(",")
-        if len(labels) == 1:
-            label = labels[0]
-            if label in doc.ref_dict:
-                num_obj = doc.ref_dict[label]
-                ref_type = elem.attributes['reference-type']
-                if ref_type == 'ref':
-                    elem.content[0].text = num_obj.ref
-                elif ref_type == 'ref+label':
-                    elem.content[0].text = num_obj.cref
-                elif ref_type == 'ref+Label':
-                    elem.content[0].text = num_obj.Cref
-                elif ref_type == 'eqref':
-                    elem.content[0].text = num_obj.format("({num})")
-                else:
-                    logger.warning(f"Unknown reference-type: {elem.attributes['reference-type']}")
-            else:
-                logger.warning(f"Reference not found: {label}")
-        else:
-            results = labels2refs(labels,elem.attributes['reference-type'],doc)
-            logger.info(f"Results: {results}")
-            logger.warning(f"Currently only support one label in reference: {labels}")
+        results = labels2refs(labels,elem.attributes['reference-type'],doc)
+        # logger.info(f"Results: {results}")
+        doc.pandoc_tex_numbering["links2replace"].append((elem,results))
 
 def main(doc=None):
     logger.info("Starting pandoc-tex-numbering")
