@@ -58,7 +58,10 @@ def prepare(doc):
 
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
 
-        "ref_suppress_continous": doc.get_metadata("ref-suppress-continous", False),
+        "multiple_ref_suppress": doc.get_metadata("multiple-ref-suppress", True),
+        "multiple_ref_separator": doc.get_metadata("multiple-ref-separator", ", "),
+        "multiple_ref_last_separator": doc.get_metadata("multiple-ref-last-separator", " and "),
+        "multiple_ref_to": doc.get_metadata("multiple-ref-to", "-"),
 
         # custom list of figures and tables
         "custom_lof": doc.get_metadata("custom-lof", False),
@@ -130,7 +133,7 @@ def prepare(doc):
 
     formaters["sec"] = []
 
-    for i in range(max_levels):
+    for i in range(1,max_levels+1):
         i_th_formater = Formater(
             fmt_presets={
                 "src":doc.get_metadata(f"section-src-format-{i}", None),
@@ -415,6 +418,25 @@ def action_find_labels(elem, doc):
 def _num2link(num_obj,fmt_preset):
     return Link(Str(num_obj.format(fmt_preset=fmt_preset)),url=f"#{num_obj.label}")
 
+def join_items(items,doc):
+    if len(items) == 1:
+        if isinstance(items[0],list):
+            return items[0]
+        else:
+            return items
+    results = []
+    for i,item in enumerate(items):
+        if i != 0:
+            if i == len(items) - 1:
+                results.append(Str(doc.pandoc_tex_numbering["multiple_ref_last_separator"]))
+            else:
+                results.append(Str(doc.pandoc_tex_numbering["multiple_ref_separator"]))
+        if isinstance(item,list):
+            results.extend(item)
+        else:
+            results.append(item)
+    return results
+
 def labels2refs(labels,ref_type,doc):
     assert ref_type in ["ref","ref+label","ref+Label","eqref"], f"Unknown reference-type: {ref_type}"
     num_objs = []
@@ -426,7 +448,7 @@ def labels2refs(labels,ref_type,doc):
         else:
             logger.warning(f"Reference not found: {label}")
 
-    is_suppress = doc.pandoc_tex_numbering["ref_suppress_continous"]
+    is_suppress = doc.pandoc_tex_numbering["multiple_ref_suppress"]
     chunks = numberings2chunks(num_objs,split_continous=is_suppress)
     
     first_fmt_preset = {
@@ -455,34 +477,21 @@ def labels2refs(labels,ref_type,doc):
                 chunk_result = [_num2link(chunk[0],chunk_first_fmt_preset)]
             elif is_suppress:
                 chunk_result = [
-                    _num2link(chunk[0],chunk_first_fmt_preset),
-                    Str("-"),
-                    _num2link(chunk[-1],"ref")
+                    [_num2link(chunk[0],chunk_first_fmt_preset),
+                    Str(doc.pandoc_tex_numbering["multiple_ref_to"]),
+                    _num2link(chunk[-1],"ref")]
                 ]
             else:
                 chunk_result = [
                     _num2link(chunk[0],chunk_first_fmt_preset),
                 ]
                 for num_obj in chunk[1:]:
-                    chunk_result.extend([
-                        Str(", "),
+                    chunk_result.append([
                         _num2link(num_obj,"ref"),
                     ])
-            if len(item_results)!=0:
-                item_results.append(Str(", "))
-            item_results.extend(chunk_result)
-        if len(item_results) >= 3:
-            item_results[-2] = Str(" and ")
-        results_list.append(item_results)
-    results = []
-    n_item_types = len(results_list)
-    for idx,item_results in enumerate(results_list):
-        if idx != 0:
-            if idx == n_item_types - 1:
-                results.append(Str(", and "))
-            else:
-                results.append(Str(", "))
-        results.extend(item_results)
+            item_results.append(join_items(chunk_result,doc))
+        results_list.append(join_items(item_results,doc))
+    results = join_items(results_list,doc)
     return results
 
 
@@ -490,7 +499,6 @@ def action_replace_refs(elem, doc):
     if isinstance(elem, Link) and 'reference-type' in elem.attributes:
         labels = elem.attributes['reference'].split(",")
         results = labels2refs(labels,elem.attributes['reference-type'],doc)
-        # logger.info(f"Results: {results}")
         doc.pandoc_tex_numbering["links2replace"].append((elem,results))
 
 def main(doc=None):

@@ -1,3 +1,7 @@
+# 1.2.2 (2025-01-15)
+
+Support multiple references in the same ref command, such as \cref{fig1,fig2,fig3}.
+
 # 1.2.1 (2025-01-13)
 
 Fix a severe numbering logic bug in the previous version. Now the numbering system should work as expected.

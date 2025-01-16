@@ -18,6 +18,7 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
       - [Metadata Values](#metadata-values)
   - [Equations](#equations)
   - [List of Figures and Tables](#list-of-figures-and-tables)
+  - [Multiple References](#multiple-references)
 - [Details](#details)
   - [Equations](#equations-1)
   - [List of Figures and Tables](#list-of-figures-and-tables-1)
@@ -150,6 +151,14 @@ You can customize the list of figures and tables by setting the following metada
 
 For more details, see the [List of Figures and Tables](#list-of-figures-and-tables) section.
 
+## Multiple References
+- `multiple-ref-suppress`: Whether to suppress the multiple references. Default is `true`. If set to `true`, the multiple references will be suppressed. For example, if you have `\cref{eq1,eq2,eq3,eq4}`, it will be shown as "equations 1-4" instead of "equations 1, 2, 3 and 4".
+- `multiple-ref-separator`: The separator between the multiple references. Default is ", ". For example, if you set it to "; ", the multiple references will be shown as "equations 1; 2; 3 and 4".
+- `multiple-ref-last-separator`: The separator between the last two references. Default is " and ". For example, if you set it to " & ", the multiple references will be shown as "equations 1, 2, 3 & 4".
+- `multiple-ref-to`: The separator between suppressed multiple references. Default is "-". For example, if you set it to " to ", the multiple references will be shown as "equations 1 to 4".
+
+NOTE: in case of setting metadata in a yaml file, the spaces at the beginning and the end of the values are by default stripped. Therefore, if you want to keep the spaces in the yaml metadata file, **you should mannually escape those spaces via double slashes.** For example, if you want set `multiple-ref-last-separator` to `" and "` (spaces appear at the beginning and the end), you should set it as `"\\ and\\ "` in the yaml file. See pandoc's [issue #10539](https://github.com/jgm/pandoc/issues/10539) for more further discussions.
+
 # Details
 
 ## Equations
@@ -256,6 +265,10 @@ In the following example, we custom the following **silly** items *only for the 
 - Turn on custom list of figures and tables and:
   - Use custom titles as "图片目录" and "Table Lists" respectively.
   - Use hyphens as the leader in the lists.
+- For multiple references:
+  - Stop suppressing the multiple references.
+  - Use "、" as the separator between the multiple references.
+  - Use " & "(spaces at both ends) as the last separator between the last two references.
 - Export the filter data to a file named `data.json`.
 
 Run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
@@ -278,7 +291,7 @@ section-cref-format-2: "第{h1}.{h2}节"
 table-src-format: "Table {h1}-{h2}-{tab_id}"
 table-cref-format: "table {tab_id} (in Section {h1}.{h2})"
 figure-src-format: "Figure {h1}.{h2}:{fig_id}"
-figure-cref-format: "as shown in Fig. {num},"
+figure-cref-format: "as shown in Fig. {num}"
 equation-src-format: "({h1}-{h2}-{eq_id})"
 subfigure-src-format: "[{subfig_sym}({subfig_id})]"
 subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
@@ -288,11 +301,15 @@ lot-title: "Table List"
 lof-title: "图片目录"
 list-leader-type: "hyphen"
 data-export-path: "data.json"
+multiple-ref-suppress: false
+multiple-ref-separator: "、"
+multiple-ref-last-separator: "\\ &\\ "
 ```
 
 The results are shown as follows:
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page1.jpg?raw=true)
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page2.jpg?raw=true)
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page3.jpg?raw=true)
 
 # Development
 
@@ -333,7 +350,7 @@ That said, however, functionalities mentioned above can never be supported easil
 # TODO
 
 There are some known issues and possible improvements:
-- [ ] Support multiple references in `cleveref` package.
+- [x] Support multiple references in `cleveref` package.
 - [x] Add empty caption for figures and tables without captions (currently, they have no caption and therefore links to them cannot be located).
 - [ ] Directly support `align*` and other non-numbered environments.
 - [x] Subfigure support.
