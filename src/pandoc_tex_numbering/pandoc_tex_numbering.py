@@ -88,7 +88,7 @@ def prepare(doc):
         r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")}"
     )
 
-    max_levels = doc.get_metadata("section-max-levels", 10)
+    max_levels = int(doc.get_metadata("section-max-levels", 10))
     # From here, we start to build the core formater system for numbering
     aka = {
         "fig": "figure",
