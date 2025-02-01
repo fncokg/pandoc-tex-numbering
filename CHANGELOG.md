@@ -1,3 +1,8 @@
+# 1.2.3 (2025-02-01)
+Fix type casting problem when inputting the metadata from the command line. 
+
+Announce stable status in the project classifiers.
+
 # 1.2.2 (2025-01-15)
 
 Support multiple references in the same ref command, such as \cref{fig1,fig2,fig3}.
