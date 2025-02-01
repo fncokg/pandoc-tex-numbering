@@ -7,7 +7,7 @@ packages = ["src/pandoc_tex_numbering"]
 
 [project]
 name = "pandoc-tex-numbering"
-version = "1.2.2"
+version = "1.2.3"
 dependencies = ["pylatexenc", "panflute"]
 requires-python = ">=3.8"
 authors = [{ name = "Chao Kong", email = "kongchao1998@gmail.com" }]
@@ -15,7 +15,7 @@ description = "All-in-one pandoc filter for highly flexible numbering and cross 
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     'Environment :: Console',
 ]
