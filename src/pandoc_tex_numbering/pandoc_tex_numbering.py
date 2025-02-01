@@ -151,10 +151,10 @@ def prepare(doc):
         _old_src_fmt = doc.get_metadata(f"section-format-source-{i}", None)
         _old_cref_fmt = doc.get_metadata(f"section-format-ref-{i}", None)
         if not _old_src_fmt is None:
-            warnings.warn(f"section-format-source-{i} is deprecated and will be removed in the version 1.3.0. Please use section-src-format-{i} instead.")
+            warnings.warn(f"section-format-source-{i} is deprecated and will be removed in the version 1.3.0. Please use section-src-format-{i} instead.",DeprecationWarning)
             i_th_formater.fmt_presets["src"] = _old_src_fmt
         if not _old_cref_fmt is None:
-            warnings.warn(f"section-format-ref-{i} is deprecated and will be removed in the version 1.3.0. Please use section-ref-format-{i} instead.")
+            warnings.warn(f"section-format-ref-{i} is deprecated and will be removed in the version 1.3.0. Please use section-ref-format-{i} instead.",DeprecationWarning)
             i_th_formater.fmt_presets["cref"] = _old_cref_fmt
 
         formaters["sec"].append(i_th_formater)
