@@ -108,7 +108,7 @@ def prepare(doc):
             ["cref","{prefix}{num}"],
             ["Cref",None]
         ]:
-            if item == "eq" and preset == "src": default = "({num})"
+            if item == "eq" and preset == "src": default = "\\qquad({num})"
             fmt = doc.get_metadata(f"{aka[item]}-{preset}-format", default)
             fmt_presets[preset] = fmt
         formaters[item] = Formater(
@@ -251,7 +251,7 @@ def _parse_multiline_environment(root_node,doc):
                 is_label_this_line = False
             if node.macroname == "\\":
                 if is_label_this_line:
-                    environment_body += f"\\qquad{{{num_obj.src}}}"
+                    environment_body += f"{{{num_obj.src}}}"
                     if label_of_this_line:
                         labels[label_of_this_line] = num_obj
                     doc.num_state.next_eq()
@@ -261,7 +261,7 @@ def _parse_multiline_environment(root_node,doc):
         environment_body += node.latex_verbatim()
     
     if is_label_this_line:
-        environment_body += f"\\qquad{{{num_obj.src}}}"
+        environment_body += f"{{{num_obj.src}}}"
         if label_of_this_line:
             labels[label_of_this_line] = num_obj
     modified_math_str = f"\\begin{{{root_node.environmentname}}}{environment_body}\\end{{{root_node.environmentname}}}"
@@ -271,7 +271,7 @@ def _parse_plain_math(math_str:str,doc):
     labels = {}
     doc.num_state.next_eq()
     num_obj = doc.num_state.current_eq()
-    modified_math_str = f"{math_str}\\qquad{{{num_obj.src}}}"
+    modified_math_str = f"{math_str}{{{num_obj.src}}}"
     label_strings = re.findall(r"\\label\{(.*?)\}",math_str)
     if len(label_strings) >= 2:
         logger.warning(f"Multiple label_strings in one math block: {label_strings}")

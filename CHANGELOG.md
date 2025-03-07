@@ -1,3 +1,6 @@
+# 1.2.4 (2025-03-07)
+Support customizable spacing command in the `equation-src-format` field (default now is `"\\quad({num})"`). Also refer to issue #11.
+
 # 1.2.3 (2025-02-01)
 Fix type casting problem when inputting the metadata from the command line. 
 

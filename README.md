@@ -113,6 +113,8 @@ By default, **if not specified**, the `Cref` format will be the capitalized vers
 
 For sections, every level has its own formatting. You can set the metadata, for example, `section-src-format-1`, `section-cref-format-2`, etc.
 
+For equations, the default `src` format (i.e. `equation-src-format`) is `"\\qquad({num})"`. `\qquad` is used to offer a little space between the equation and the number. You can customize it as you like.
+
 #### Metadata Values
 The metadata values are python f-string format strings. Various fields are provided for you to customize the format. For example, if you set the `number-reset-level` to 2, `figure-prefix` to `figure` and `prefix-space` to `True`. Then, the fifth figure under subsection 2.3 will have the following fields:
 - `num`: `2.3.5`
@@ -292,7 +294,7 @@ table-src-format: "Table {h1}-{h2}-{tab_id}"
 table-cref-format: "table {tab_id} (in Section {h1}.{h2})"
 figure-src-format: "Figure {h1}.{h2}:{fig_id}"
 figure-cref-format: "as shown in Fig. {num}"
-equation-src-format: "({h1}-{h2}-{eq_id})"
+equation-src-format: "\\qquad({h1}-{h2}-{eq_id})"
 subfigure-src-format: "[{subfig_sym}({subfig_id})]"
 subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
 custom-lot: true
@@ -355,3 +357,4 @@ There are some known issues and possible improvements:
 - [ ] Directly support `align*` and other non-numbered environments.
 - [x] Subfigure support.
 - [x] Support short captions in `docx` output.
+- [ ] Support right-aligned equation numbers.

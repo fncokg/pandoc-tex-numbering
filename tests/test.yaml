@@ -12,7 +12,7 @@ table-src-format: "Table {h1}-{h2}-{tab_id}"
 table-cref-format: "table {tab_id} (in Section {h1}.{h2})"
 figure-src-format: "Figure {h1}.{h2}:{fig_id}"
 figure-cref-format: "as shown in Fig. {num}"
-equation-src-format: "({h1}-{h2}-{eq_id})"
+equation-src-format: "\\qquad({h1}-{h2}-{eq_id})"
 subfigure-src-format: "[{subfig_sym}({subfig_id})]"
 subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
 custom-lot: true
