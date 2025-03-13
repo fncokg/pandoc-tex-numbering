@@ -1,3 +1,7 @@
+# 1.2.5 (2025-03-13)
+Support theorem numbering. Also refer to a [StackExchange question](https://tex.stackexchange.com/questions/738132/simultaneously-cross-referencing-numbered-amsthm-theorems-and-numbered-equations).
+
+
 # 1.2.4 (2025-03-07)
 Support customizable spacing command in the `equation-src-format` field (default now is `"\\quad({num})"`). Also refer to issue #11.
 
