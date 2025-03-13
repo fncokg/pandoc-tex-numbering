@@ -1,4 +1,6 @@
 from .lang_num import language_functions
+import logging
+logger = logging.getLogger('pandoc-tex-numbering')
 
 def header_fields(header_nums):
     fields = {
@@ -48,6 +50,9 @@ class Formater:
         self.ids2syms = ids2syms
         self.prefix = prefix
         self.pref_space = pref_space
+    
+    def __repr__(self):
+        return f"Formater({self.item_type})"
     
     def __call__(self, nums, fmt_preset=None,fmt=None):
         if not fmt_preset is None:
@@ -144,6 +149,7 @@ class NumberingState:
         self.tab = 0
         self.fig = 0
         self.subfig = 0
+        self.thms = {}
         self.formaters = formaters
             
     def next_sec(self,level):
@@ -154,6 +160,7 @@ class NumberingState:
             self.tab = 0
             self.fig = 0
             self.subfig = 0
+            # we don't reset theorems
     
     def next_eq(self):
         self.eq += 1
@@ -167,6 +174,12 @@ class NumberingState:
     
     def next_subfig(self):
         self.subfig += 1
+    
+    def next_thm(self,thm_type):
+        if not thm_type in self.thms:
+            self.thms[thm_type] = 1
+        else:
+            self.thms[thm_type] += 1
     
     @property
     def current_sec_nums(self):
@@ -186,6 +199,11 @@ class NumberingState:
             return Numbering("subfig",self.current_sec_nums+[self.fig,self.subfig],self.formaters["subfig"])
         else:
             return Numbering("fig",self.current_sec_nums+[self.fig],self.formaters["fig"])
+    
+    def current_thm(self,thm_type):
+        if not thm_type in self.thms:
+            self.thms[thm_type] = 0
+        return Numbering(f"thm-{thm_type}",self.current_sec_nums+[self.thms[thm_type]],self.formaters["thm"][thm_type])
 
 def numberings2chunks(numberings,split_continous=True):
     numberings = sorted(numberings)

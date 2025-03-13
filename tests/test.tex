@@ -8,6 +8,9 @@
 \usepackage{bicaption}
 \usepackage{subcaption}
 
+\newtheorem{thm}{Theorem}
+\newtheorem{lem}{Lemma}
+
 % Custom names for cref
 \crefname{equation}{equation}{equations}
 \crefname{figure}{figure}{figures}
@@ -19,7 +22,7 @@
 \maketitle
 
 \section{Introduction}
-This document is created to test the pandoc numbering functions for equations, figures, and tables. \Cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref) provide examples of equations, figures, and tables.
+This document is created to test the pandoc numbering functions for equations, figures, tables, and theorems.
 
 \section{Equations}
 
@@ -109,8 +112,25 @@ Here is a single line equation:
 \subsection{References to Figures and Tables}
 \Cref{fig:example} (cref) is an example image. Table \ref{tab:example} (ref) is an example table. We can also refer to all those items at once like: \Cref{fig:example,tab:example,eq:align2,eq:align1,eq:einstein,eq:quadratic,sec:equations,sec:figures_tables}.
 
-\section{Conclusion}
-This document includes examples of multiline equations, single line equations, figures, and tables with labels and references to test the pandoc numbering functions. For more details, see \cref{sec:equations} (cref) and \cref{sec:figures_tables} (cref).
+\section{Theorems}
+
+\begin{thm}
+    \label{thm:pythagorean}
+    (Pythagorean theorem) For a right triangle, if $c$ denotes the length of the hypotenuse and $a$ and $b$ denote the lengths of the other two sides, then the following equation holds: $a^2 + b^2 = c^2$.
+\end{thm}
+
+\begin{thm}
+    \label{thm:another}
+    (Another theorem) This is another theorem.
+\end{thm}
+
+
+\begin{lem}
+    \label{lem:triangle_inequality}
+    (Triangle inequality) For any triangle, the sum of the lengths of any two sides is greater than the length of the third side.
+\end{lem}
+
+We can refer to the two theorems as follows: \Cref{thm:pythagorean} (Cref) is the Pythagorean theorem, \cref{thm:another} (cref) is another theorem. The triangle inequality is stated in \cref{lem:triangle_inequality} (cref). Plain references are also possible: The Pythagorean theorem is \ref{thm:pythagorean} (ref).
 
 \listoffigures
 

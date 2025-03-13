@@ -1,7 +1,10 @@
 # test.yaml
+theorem-names: "thm,lem"
 figure-prefix: Fig
 table-prefix: Tab
 equation-prefix: Eq
+theorem-thm-prefix: Theorem
+theorem-lem-prefix: Lemma
 number-reset-level: 2
 non-arabic-numbers: true
 section-src-format-1: "第{h1_zh}章"

@@ -1,5 +1,5 @@
 # pandoc-tex-numbering
-This is an all-in-one pandoc filter for converting your LaTeX files to any format while keeping **numbering, hyperlinks, caption formats and (clever) cross references in (maybe multi-line) equations, sections, figures, and tables**. The formating is highly customizable, easy-to-use, and even more flexible than the LaTeX default.
+This is an all-in-one pandoc filter for converting your LaTeX files to any format while keeping **numbering, hyperlinks, caption formats and (clever) cross references in (maybe multi-line) equations, sections, figures, tables and theorems**. The formating is highly customizable, easy-to-use, and even more flexible than the LaTeX default.
 
 # Contents
 - [pandoc-tex-numbering](#pandoc-tex-numbering)
@@ -17,6 +17,7 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
       - [Metadata Names](#metadata-names)
       - [Metadata Values](#metadata-values)
   - [Equations](#equations)
+  - [Theorems](#theorems)
   - [List of Figures and Tables](#list-of-figures-and-tables)
   - [Multiple References](#multiple-references)
 - [Details](#details)
@@ -40,6 +41,7 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
 - **Multi-line Equations**: Multi-line equations in LaTeX math block such as `align`, `cases` can be numbered line by line. `\nonumber` commands are supported to turn off the numbering of a specific line.
 - **`cleveref` Package**: `cref` and `Cref` commands are supported. You can customize the prefix of the references.
 - **Subfigures**: `subcaption` package is supported. Subfigures can be numbered with customized symbols and formats.
+- **Theorems**: Theorems are supported with customized formats.
 - **Non-Arabic Numbers**: Chinese numbers "第一章", "第二节" etc. are supported. You can customize the numbering format.
 - **Custom List of Figures and Tables**: **Short captions** as well as custom lof/lot titles are supported for figures and tables.
 - **Custom Formatting of Everything**: You can customize the format of the numbering and references with python f-string format based on various fields we provide.
@@ -77,6 +79,7 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `number-tables`: Whether to number the tables. Default is `true`.
 - `number-equations`: Whether to number the equations. Default is `true`.
 - `number-sections`: Whether to number the sections. Default is `true`.
+- `number-theorems`: Whether to number the theorems. Default is `true`. **You MUST set the metadata `theorem-names` to the names of the theorems you defined in the LaTeX source code to make it work.**
 - `number-reset-level`: The level of the section that will reset the numbering. Default is 1. For example, if the value is 2, the numbering will be reset at every second-level section and shown as "1.1.1", "3.2.1" etc.
 - `section-max-levels`: The maximum level of the section numbering. Default is 10.
 - `data-export-path`: Where to export the filter data. Default is `None`, which means no data will be exported. If set, the data will be exported to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter-debugging.
@@ -95,13 +98,14 @@ The following metadata are used for the prefix-based system:
 - `table-prefix`: The prefix of the table reference. Default is "Table".
 - `equation-prefix`: The prefix of the equation reference. Default is "Equation".
 - `section-prefix`: The prefix of the section reference. Default is "Section".
+- `theorem-{theorem_name}-prefix`: The prefix of the theorem reference. Default is capitalized `theorem_name`. For example, if you defined `\newtheorem{thm}{Theorem}`, you should set the metadata `theorem-thm-prefix` to "Theorem" (and the default is `Thm`).
 - `prefix-space`: Whether to add a space between the prefix and the number. Default is `true` (for some languages, the space may not be needed).
 
 ### Custom Formatting System (f-string formatting)
 
 #### Metadata Names
-For now, we support 5 types of items and 4 types of formatting:
-- Item types: `fig` (figure), `tab` (table), `eq` (equation), `sec` (section), `subfig` (subfigure).
+For now, we support 5+x types of items and 4 types of formatting:
+- Item types: `fig` (figure), `tab` (table), `eq` (equation), `sec` (section), `subfig` (subfigure), `thm-{theorem_name}` (theorem). For example, if you defined `\newtheorem{lem}{Lemma}`, the item type is `thm-lem`.
 - Formatting types: 
   - `src` (source): The format of the numbering where the item appears. For figures and tables, this is the format used in the captions. For equations, this is the format used after the equations. For sections, this is the format used at the beginning of the section titles.
   - `ref` (reference): The format of numbering used in `\ref` command.
@@ -133,6 +137,7 @@ Here are some examples of the metadata values:
 - set the `fig-src-format` metadata to `"{prefix}{num}"`, the numbering before its caption will be shown as "Figure 2.3.5"
 - set the `fig-cref-format` metadata to `"{Prefix} {fig_id} (in Section {parent_num})"`, when referred to by `\Cref`, it will be shown as `"Figure 5 (in Section 2.3)"`.
 - set the `section-src-format-1` metadata to `"第{h1_zh}章"` and `section-cref-format-1` to `"第{h1_zh}章"` to use Chinese numbers for the first level sections.
+- set the `thm-thm-cref-format` metadata to `"Theorem {thm-thm_id}"` to use the format "Theorem 1" for the theorem environment "thm" while `"Theorem {num}"` for "Theorem 1.1".
 
 For more non-arabic number support, see the [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support) section.
 
@@ -140,6 +145,9 @@ For more examples, see also the [Customized Metadata Examples](#customized-metad
 
 ## Equations
 - `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
+
+## Theorems
+- `theorem-names`: The names of the theorems separated by commas. Default is "". For example, if you have `\newtheorem{thm}{Theorem}` and `\newtheorem{lem}{Lemma}`, you should set the metadata `theorem-names` to "thm,lem".
 
 ## List of Figures and Tables
 To support short captions and custom titles in the list of figures and tables, you can set the following metadata to turn on the custom list of figures and tables:
@@ -238,7 +246,7 @@ With the testing file `tests/test.tex`:
 ## Default Metadata
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering test.tex 
+pandoc -o output.docx -F pandoc-tex-numbering test.tex -M theorem-names="thm,lem"
 ```
 
 The results are shown as follows:
@@ -264,6 +272,9 @@ In the following example, we custom the following **silly** items *only for the 
   - For subfigures:
     - use greek letters for symbols
     - at the beginning of captions, use styles like `[β(1)]`
+  - For theorems:
+    - Theorem environment "thm" uses "Theorem" as the prefix
+    - Lemma environment "lem" uses "Lemma" as the prefix
 - Turn on custom list of figures and tables and:
   - Use custom titles as "图片目录" and "Table Lists" respectively.
   - Use hyphens as the leader in the lists.
@@ -281,9 +292,12 @@ pandoc -o output.docx -F pandoc-tex-numbering --metadata-file test.yaml -f latex
 
 ```yaml
 # test.yaml
+theorem-names: "thm,lem"
 figure-prefix: Fig
 table-prefix: Tab
 equation-prefix: Eq
+theorem-thm-prefix: Theorem
+theorem-lem-prefix: Lemma
 number-reset-level: 2
 non-arabic-numbers: true
 section-src-format-1: "第{h1_zh}章"
@@ -306,6 +320,7 @@ data-export-path: "data.json"
 multiple-ref-suppress: false
 multiple-ref-separator: "、"
 multiple-ref-last-separator: "\\ &\\ "
+multiple-ref-to: "\\ to\\ "
 ```
 
 The results are shown as follows:

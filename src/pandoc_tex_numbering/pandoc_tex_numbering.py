@@ -51,6 +51,7 @@ def prepare(doc):
         "num_tab": doc.get_metadata("number-tables", True),
         "num_eq": doc.get_metadata("number-equations", True),
         "num_sec": doc.get_metadata("number-sections", True),
+        "num_theorem": doc.get_metadata("number-theorems", True),
 
         "data_export_path": doc.get_metadata("data-export-path", None),
 
@@ -82,6 +83,12 @@ def prepare(doc):
         "lof_block": None,
         "lot_block": None
     }
+    thm_names = doc.get_metadata("theorem-names", None)
+    doc.pandoc_tex_numbering["theorem_names"] = thm_names.split(",") if thm_names else []
+    if doc.pandoc_tex_numbering["num_theorem"] and len(doc.pandoc_tex_numbering["theorem_names"]) == 0:
+        warnings.warn("The number-theorems is enabled but no theorem names are provided. The numbering of theorems will be disabled.",UserWarning)
+        logger.warning("The number-theorems is enabled but no theorem names are provided. The numbering of theorems will be disabled.")
+        doc.pandoc_tex_numbering["num_theorem"] = False
 
     # Prepare the multiline environment filter pattern for fast checking
     doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
@@ -95,9 +102,9 @@ def prepare(doc):
         "tab": "table",
         "eq": "equation",
         "sec": "section",
-        "subfig": "subfigure"
+        "subfig": "subfigure",
     }
-    formaters = {}
+    formaters = {"thm":{}}
     pref_space = doc.get_metadata("prefix-space", True)
 
     for item in ["fig","tab","eq"]:
@@ -117,6 +124,25 @@ def prepare(doc):
             prefix=doc.get_metadata(f"{aka[item]}-prefix", aka[item].capitalize()),
             pref_space=pref_space
         )
+    
+    for thm_type in doc.pandoc_tex_numbering["theorem_names"]:
+        fmt_presets = {}
+        item_type = f"thm-{thm_type}"
+        for preset,default in [
+            ["src",None],
+            ["ref",f"{{{item_type}_id}}"],
+            ["cref",f"{{prefix}}{{{item_type}_id}}"],
+            ["Cref",None]
+        ]:
+            fmt = doc.get_metadata(f"theorem-{thm_type}-{preset}-format", default)
+            fmt_presets[preset] = fmt
+        formaters["thm"][thm_type] = Formater(
+            fmt_presets=fmt_presets,
+            item_type=item_type,
+            prefix=doc.get_metadata(f"theorem-{thm_type}-prefix", thm_type.capitalize()),
+            pref_space=pref_space
+        )
+
     
     formaters["subfig"] = Formater(
         fmt_presets={
@@ -385,7 +411,6 @@ def find_labels_figure(elem,doc):
             doc.num_state.next_subfig()
             _find_labels_figure(child,doc,subfigure=True)
 
-
 def _find_labels_figure(elem,doc,subfigure=False):
     label = elem.identifier
     num_obj = doc.num_state.current_fig(subfig=subfigure)
@@ -398,6 +423,15 @@ def _find_labels_figure(elem,doc,subfigure=False):
     add_label_to_caption(num_obj,label,elem)
     if label:
         doc.ref_dict[label] = num_obj
+
+def find_labels_theorem(elem,doc):
+    thm_type = [cls for cls in elem.classes if cls in doc.pandoc_tex_numbering["theorem_names"]][0]
+    doc.num_state.next_thm(thm_type)
+    label = elem.identifier
+    num_obj = doc.num_state.current_thm(thm_type)
+    if not label:
+        elem.identifier = f"thm_{thm_type}:{num_obj.ref}"
+    doc.ref_dict[label] = num_obj
 
 def action_find_labels(elem, doc):
     # Find labels in headers, math blocks, figures and tables
@@ -415,6 +449,10 @@ def action_find_labels(elem, doc):
             doc.pandoc_tex_numbering["lof_block"] = elem
         if "listoftables" in elem.text:
             doc.pandoc_tex_numbering["lot_block"] = elem
+    if isinstance(elem,Div):
+        if any([cls in doc.pandoc_tex_numbering["theorem_names"] for cls in elem.classes]) and doc.pandoc_tex_numbering["num_theorem"]:
+            find_labels_theorem(elem,doc)
+
 def _num2link(num_obj,fmt_preset):
     return Link(Str(num_obj.format(fmt_preset=fmt_preset)),url=f"#{num_obj.label}")
 
@@ -447,7 +485,7 @@ def labels2refs(labels,ref_type,doc):
             num_objs.append(num_obj)
         else:
             logger.warning(f"Reference not found: {label}")
-
+            
     is_suppress = doc.pandoc_tex_numbering["multiple_ref_suppress"]
     chunks = numberings2chunks(num_objs,split_continous=is_suppress)
     
