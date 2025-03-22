@@ -127,7 +127,7 @@ The metadata values are python f-string format strings. Various fields are provi
 - `prefix`: `figure ` (note the space at the end)
 - `Prefix`: `Figure `
 - `h1`: `2`
-- `h2`: `3`
+- `h2`: `3`（note that `h2` is accessible only when the `number-reset-level` >= 2 and so on）
 - `h1_zh`: `二` (Chinese number support)
 - `h2_zh`: `三`
 
