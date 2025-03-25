@@ -44,55 +44,63 @@ def extract_captions_from_refdict(ref_dict,ref_type,doc):
     return items
 
 def prepare(doc):
-    # These are global metadata settings which will be used in the whole document
-    doc.pandoc_tex_numbering = {
-        # settings
+    # These are global metadata settings which will be used in the whole document (need to be saved in the doc object)
+    # Settings used once will not be saved, thus it only appears in the prepare function
+    doc.settings = {
+        # Numbering Item Switches
         "num_fig": doc.get_metadata("number-figures", True),
         "num_tab": doc.get_metadata("number-tables", True),
         "num_eq": doc.get_metadata("number-equations", True),
         "num_sec": doc.get_metadata("number-sections", True),
         "num_theorem": doc.get_metadata("number-theorems", True),
 
-        "data_export_path": doc.get_metadata("data-export-path", None),
-
-        "auto_labelling": doc.get_metadata("auto-labelling", True),
-
+        # Multiline Equation Settings
         "multiline_envs": doc.get_metadata("multiline-environments", "cases,align,aligned,gather,multline,flalign").split(","),
 
+        # Multiple Reference Settings
         "multiple_ref_suppress": doc.get_metadata("multiple-ref-suppress", True),
         "multiple_ref_separator": doc.get_metadata("multiple-ref-separator", ", "),
         "multiple_ref_last_separator": doc.get_metadata("multiple-ref-last-separator", " and "),
         "multiple_ref_to": doc.get_metadata("multiple-ref-to", "-"),
 
-        # custom list of figures and tables
+        # Custom List of Figures and Tables
         "custom_lof": doc.get_metadata("custom-lof", False),
         "custom_lot": doc.get_metadata("custom-lot", False),
-
         "list_leader_type": doc.get_metadata("list-leader-type", "middleDot"),
         "lof_title": doc.get_metadata("lof-title", "List of Figures"),
         "lot_title": doc.get_metadata("lot-title", "List of Tables"),
-        
-        "current_tab": 0,
+
+        # Miscellaneous
+        "data_export_path": doc.get_metadata("data-export-path", None),
+        "auto_labelling": doc.get_metadata("auto-labelling", True),
+    }
+    # Run-time global variables
+    doc.global_vars = {
+        # Equations with labels will be wrapped with div elements, since pandoc does not support adding identifiers to math blocks directly
         "paras2wrap": {
             "paras": [],
             "labels": []
         },
+        # Tables with labels will be wrapped with div elements, only in case the table is not labelled in the latex source
         "tabs2wrap": [],
+
+        # We save the links to replace here to avoid searching them in the finalize function
         "links2replace": [],
 
+        # We save locations of the custom list blocks (if any) here to avoid searching them in the finalize function
         "lof_block": None,
         "lot_block": None
     }
     thm_names = doc.get_metadata("theorem-names", None)
-    doc.pandoc_tex_numbering["theorem_names"] = thm_names.split(",") if thm_names else []
-    if doc.pandoc_tex_numbering["num_theorem"] and len(doc.pandoc_tex_numbering["theorem_names"]) == 0:
+    doc.settings["theorem_names"] = thm_names.split(",") if thm_names else []
+    if doc.settings["num_theorem"] and len(doc.settings["theorem_names"]) == 0:
         warnings.warn("The number-theorems is enabled but no theorem names are provided. The numbering of theorems will be disabled.",UserWarning)
         logger.warning("The number-theorems is enabled but no theorem names are provided. The numbering of theorems will be disabled.")
-        doc.pandoc_tex_numbering["num_theorem"] = False
+        doc.settings["num_theorem"] = False
 
     # Prepare the multiline environment filter pattern for fast checking
-    doc.pandoc_tex_numbering["multiline_filter_pattern"] = re.compile(
-        r"\\begin\{("+"|".join(doc.pandoc_tex_numbering["multiline_envs"])+")}"
+    doc.global_vars["multiline_filter_pattern"] = re.compile(
+        r"\\begin\{("+"|".join(doc.settings["multiline_envs"])+")}"
     )
 
     max_levels = int(doc.get_metadata("section-max-levels", 10))
@@ -125,7 +133,7 @@ def prepare(doc):
             pref_space=pref_space
         )
     
-    for thm_type in doc.pandoc_tex_numbering["theorem_names"]:
+    for thm_type in doc.settings["theorem_names"]:
         fmt_presets = {}
         item_type = f"thm-{thm_type}"
         for preset,default in [
@@ -185,7 +193,7 @@ def prepare(doc):
 
         formaters["sec"].append(i_th_formater)
     
-    # Initialize a numbering state object, this is 
+    # Initialize a numbering state object
     doc.num_state = NumberingState(
         reset_level=int(doc.get_metadata("number-reset-level", 1)),
         max_levels=max_levels,
@@ -196,7 +204,7 @@ def prepare(doc):
 
 def finalize(doc):
     # Add labels for equations by wrapping them with div elements, since pandoc does not support adding identifiers to math blocks directly
-    paras2wrap = doc.pandoc_tex_numbering["paras2wrap"]
+    paras2wrap = doc.global_vars["paras2wrap"]
     paras,labels_list = paras2wrap["paras"],paras2wrap["labels"]
     assert len(paras) == len(labels_list)
     for para,labels in zip(paras,labels_list):
@@ -213,7 +221,7 @@ def finalize(doc):
                 logger.warning(f"Failed to add identifier to paragraph because of {e}. Pleas check: \n The paragraph: {para}. Parent of the paragraph: {parent}")
     
     # Add labels for tables by wrapping them with div elements. This is necessary because if a table is not labelled in the latex source, pandoc will not generate a div element for it.
-    for tab,label in doc.pandoc_tex_numbering["tabs2wrap"]:
+    for tab,label in doc.global_vars["tabs2wrap"]:
         if label:
             parent = tab.parent
             idx = parent.content.index(tab)
@@ -221,31 +229,31 @@ def finalize(doc):
             div = Div(tab,identifier=label)
             parent.content.insert(idx,div)
     
-    for link,items in doc.pandoc_tex_numbering["links2replace"]:
+    for link,items in doc.global_vars["links2replace"]:
         parent = link.parent
         idx = parent.content.index(link)
         del parent.content[idx]
         for item in items[::-1]:
             parent.content.insert(idx,item)
 
-    if doc.pandoc_tex_numbering["custom_lot"]:
-        if not doc.pandoc_tex_numbering["lot_block"]:
+    if doc.settings["custom_lot"]:
+        if not doc.global_vars["lot_block"]:
             doc.content.insert(0,RawBlock("\\listoftables",format="latex"))
-            doc.pandoc_tex_numbering["lot_block"] = doc.content[0]
+            doc.global_vars["lot_block"] = doc.content[0]
         table_items = extract_captions_from_refdict(doc.ref_dict,"tab",doc)
-        add_docx_list(doc.pandoc_tex_numbering["lot_block"],table_items,doc.pandoc_tex_numbering["lot_title"],leader_type=doc.pandoc_tex_numbering["list_leader_type"])
+        add_docx_list(doc.global_vars["lot_block"],table_items,doc.settings["lot_title"],leader_type=doc.settings["list_leader_type"])
 
-    if doc.pandoc_tex_numbering["custom_lof"]:
-        if not doc.pandoc_tex_numbering["lof_block"]:
+    if doc.settings["custom_lof"]:
+        if not doc.global_vars["lof_block"]:
             doc.content.insert(0,RawBlock("\\listoffigures",format="latex"))
-            doc.pandoc_tex_numbering["lof_block"] = doc.content[0]
+            doc.global_vars["lof_block"] = doc.content[0]
         figure_items = extract_captions_from_refdict(doc.ref_dict,"fig",doc)
-        add_docx_list(doc.pandoc_tex_numbering["lof_block"],figure_items,doc.pandoc_tex_numbering["lof_title"],leader_type=doc.pandoc_tex_numbering["list_leader_type"])
+        add_docx_list(doc.global_vars["lof_block"],figure_items,doc.settings["lof_title"],leader_type=doc.settings["list_leader_type"])
     
     
     # Export the reference dictionary to a json file
-    if doc.pandoc_tex_numbering["data_export_path"]:
-        with open(doc.pandoc_tex_numbering["data_export_path"],"w") as f:
+    if doc.settings["data_export_path"]:
+        with open(doc.settings["data_export_path"],"w") as f:
             ref_dict_data = {
                 label:num_obj.to_dict()
                 for label,num_obj in doc.ref_dict.items()
@@ -253,7 +261,8 @@ def finalize(doc):
             json.dump(ref_dict_data,f,indent=2,ensure_ascii=False)
     
     # Clean up the global variables
-    del doc.pandoc_tex_numbering
+    del doc.settings
+    del doc.global_vars
     del doc.num_state
     del doc.ref_dict
 
@@ -313,12 +322,12 @@ def parse_latex_math(math_str:str,doc):
     # Otherwise, add numbering to the whole math block
 
     # Fast check if it is a multiline environment
-    if re.match(doc.pandoc_tex_numbering["multiline_filter_pattern"],math_str):
+    if re.match(doc.global_vars["multiline_filter_pattern"],math_str):
         walker = LatexWalker(math_str)
         nodelist,_,_ = walker.get_latex_nodes(pos=0)
         if len(nodelist) == 1:
             root_node = nodelist[0]
-            if isinstance(root_node,LatexEnvironmentNode) and root_node.environmentname in doc.pandoc_tex_numbering["multiline_envs"]:
+            if isinstance(root_node,LatexEnvironmentNode) and root_node.environmentname in doc.settings["multiline_envs"]:
                 return _parse_multiline_environment(root_node,doc)
     # Otherwise, add numbering to the whole math block
     return _parse_plain_math(math_str,doc)
@@ -353,7 +362,7 @@ def find_labels_header(elem,doc):
         if isinstance(child,Span) and "label" in child.attributes:
             label = child.attributes["label"]
             doc.ref_dict[label] = num_obj
-    if doc.pandoc_tex_numbering["num_sec"]:
+    if doc.settings["num_sec"]:
         elem.content.insert(0,Space())
         elem.content.insert(0,Str(num_obj.src))
 
@@ -371,12 +380,12 @@ def find_labels_math(elem,doc):
                 logger.warning(f"Unexpected parent of math block: {this_elem}")
                 break
         else:
-            if not this_elem in doc.pandoc_tex_numbering["paras2wrap"]["paras"]:
-                doc.pandoc_tex_numbering["paras2wrap"]["paras"].append(this_elem)
-                doc.pandoc_tex_numbering["paras2wrap"]["labels"].append(list(labels.keys()))
+            if not this_elem in doc.global_vars["paras2wrap"]["paras"]:
+                doc.global_vars["paras2wrap"]["paras"].append(this_elem)
+                doc.global_vars["paras2wrap"]["labels"].append(list(labels.keys()))
             else:
-                idx = doc.pandoc_tex_numbering["paras2wrap"]["paras"].index(this_elem)
-                doc.pandoc_tex_numbering["paras2wrap"]["labels"][idx].extend(labels.keys())
+                idx = doc.global_vars["paras2wrap"]["paras"].index(this_elem)
+                doc.global_vars["paras2wrap"]["labels"][idx].extend(labels.keys())
 
 def find_labels_table(elem,doc):
     doc.num_state.next_tab()
@@ -384,13 +393,13 @@ def find_labels_table(elem,doc):
     num_obj = doc.num_state.current_tab()
     if isinstance(elem.parent,Div):
         label = elem.parent.identifier
-        if not label and doc.pandoc_tex_numbering["auto_labelling"]:
+        if not label and doc.settings["auto_labelling"]:
             label = f"tab:{num_obj.ref}"
             elem.parent.identifier = label
     else:
-        if doc.pandoc_tex_numbering["auto_labelling"]:
+        if doc.settings["auto_labelling"]:
             label = f"tab:{num_obj.ref}"
-            doc.pandoc_tex_numbering["tabs2wrap"].append([elem,label])
+            doc.global_vars["tabs2wrap"].append([elem,label])
         else:
             label = ""
     
@@ -414,7 +423,7 @@ def find_labels_figure(elem,doc):
 def _find_labels_figure(elem,doc,subfigure=False):
     label = elem.identifier
     num_obj = doc.num_state.current_fig(subfig=subfigure)
-    if not label and doc.pandoc_tex_numbering["auto_labelling"]:
+    if not label and doc.settings["auto_labelling"]:
         label = f"fig:{num_obj.ref}"
         elem.identifier = label
     
@@ -425,7 +434,7 @@ def _find_labels_figure(elem,doc,subfigure=False):
         doc.ref_dict[label] = num_obj
 
 def find_labels_theorem(elem,doc):
-    thm_type = [cls for cls in elem.classes if cls in doc.pandoc_tex_numbering["theorem_names"]][0]
+    thm_type = [cls for cls in elem.classes if cls in doc.settings["theorem_names"]][0]
     doc.num_state.next_thm(thm_type)
     label = elem.identifier
     num_obj = doc.num_state.current_thm(thm_type)
@@ -438,19 +447,19 @@ def action_find_labels(elem, doc):
     if isinstance(elem,Header):
         # We should always find labels in headers since we need the section numbering information
         find_labels_header(elem,doc)
-    if isinstance(elem,Math) and elem.format == "DisplayMath" and doc.pandoc_tex_numbering["num_eq"]:
+    if isinstance(elem,Math) and elem.format == "DisplayMath" and doc.settings["num_eq"]:
         find_labels_math(elem,doc)  
-    if isinstance(elem,Figure) and doc.pandoc_tex_numbering["num_fig"]:
+    if isinstance(elem,Figure) and doc.settings["num_fig"]:
         find_labels_figure(elem,doc)
-    if isinstance(elem,Table) and doc.pandoc_tex_numbering["num_tab"]:
+    if isinstance(elem,Table) and doc.settings["num_tab"]:
         find_labels_table(elem,doc)
-    if isinstance(elem,RawBlock) and (doc.pandoc_tex_numbering["custom_lof"] or doc.pandoc_tex_numbering["custom_lot"]) and elem.format == "latex":
+    if isinstance(elem,RawBlock) and (doc.settings["custom_lof"] or doc.settings["custom_lot"]) and elem.format == "latex":
         if "listoffigures" in elem.text:
-            doc.pandoc_tex_numbering["lof_block"] = elem
+            doc.global_vars["lof_block"] = elem
         if "listoftables" in elem.text:
-            doc.pandoc_tex_numbering["lot_block"] = elem
+            doc.global_vars["lot_block"] = elem
     if isinstance(elem,Div):
-        if any([cls in doc.pandoc_tex_numbering["theorem_names"] for cls in elem.classes]) and doc.pandoc_tex_numbering["num_theorem"]:
+        if any([cls in doc.settings["theorem_names"] for cls in elem.classes]) and doc.settings["num_theorem"]:
             find_labels_theorem(elem,doc)
 
 def _num2link(num_obj,fmt_preset):
@@ -466,9 +475,9 @@ def join_items(items,doc):
     for i,item in enumerate(items):
         if i != 0:
             if i == len(items) - 1:
-                results.append(Str(doc.pandoc_tex_numbering["multiple_ref_last_separator"]))
+                results.append(Str(doc.settings["multiple_ref_last_separator"]))
             else:
-                results.append(Str(doc.pandoc_tex_numbering["multiple_ref_separator"]))
+                results.append(Str(doc.settings["multiple_ref_separator"]))
         if isinstance(item,list):
             results.extend(item)
         else:
@@ -486,7 +495,7 @@ def labels2refs(labels,ref_type,doc):
         else:
             logger.warning(f"Reference not found: {label}")
             
-    is_suppress = doc.pandoc_tex_numbering["multiple_ref_suppress"]
+    is_suppress = doc.settings["multiple_ref_suppress"]
     chunks = numberings2chunks(num_objs,split_continous=is_suppress)
     
     first_fmt_preset = {
@@ -516,7 +525,7 @@ def labels2refs(labels,ref_type,doc):
             elif is_suppress:
                 chunk_result = [
                     [_num2link(chunk[0],chunk_first_fmt_preset),
-                    Str(doc.pandoc_tex_numbering["multiple_ref_to"]),
+                    Str(doc.settings["multiple_ref_to"]),
                     _num2link(chunk[-1],"ref")]
                 ]
             else:
@@ -537,7 +546,7 @@ def action_replace_refs(elem, doc):
     if isinstance(elem, Link) and 'reference-type' in elem.attributes:
         labels = elem.attributes['reference'].split(",")
         results = labels2refs(labels,elem.attributes['reference-type'],doc)
-        doc.pandoc_tex_numbering["links2replace"].append((elem,results))
+        doc.global_vars["links2replace"].append((elem,results))
 
 def main(doc=None):
     logger.info("Starting pandoc-tex-numbering")

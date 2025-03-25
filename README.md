@@ -30,9 +30,8 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
   - [Default Metadata](#default-metadata)
   - [Customized Metadata](#customized-metadata)
 - [Development](#development)
+  - [Basic Structure of the Filter](#basic-structure-of-the-filter)
   - [Custom Non-Arabic Numbers Support](#custom-non-arabic-numbers-support)
-  - [Custom Numbering Format](#custom-numbering-format)
-  - [Extend the Filter](#extend-the-filter)
   - [Advanced docx Support](#advanced-docx-support)
 - [FAQ](#faq)
 - [TODO](#todo)
@@ -330,6 +329,39 @@ The results are shown as follows:
 
 # Development
 
+## Basic Structure of the Filter
+
+If you want to extend the filter or understand the core logic of the filter, before and while reading the source code, you may want to read this.
+
+`pandoc-tex-numbering` is designed with an OOP style to support a flexible and extensible formatting system. The core objects are as follows:
+- `Formater` objects: represents a specific **formatting logic**. It defines all possible formats of a specific type of item.
+    - Data: a series of format presets (a dict mapping format names to a fstring or a callable)
+    - Usage: call with a detailed `nums` list to generate the formatted string.
+- `Numbering` objects: represents a specific **numbering identity**, i.e. an unique item which can be referred to. 
+    - Data: numbering information of the item (a `nums` list per se), its corresponding formater object and other metadata (e.g. captions).
+    - Usage:
+        - Generate formatted string: built-in format presets (`ref`, `cref`, `Cref`, `src`) of this item can be accessed directly by calling the corresponding property of the numbering object (e.g. `num_obj.ref`).
+        - Compare: two numbering objects can be directly compared based on the `nums` list.
+- `NumberingState` object: core object to manage the numbering of all items in the document. It mangages numbering increment, reset, generate new `Numberintg` objects and assign proper `Formater` objects to them.
+    - Data: current numbering information of all types of items, and formater objects for all types of items.
+    - Usage:
+        - Increment numbering: call `next_{item_type}` method to increment the numbering of a specific type of item (numbering reset will be handled automatically).
+        - Get current (newest) numbering objects of a specific type: call `current_{item_type}` method to get the current numbering object of a specific type.
+
+The core logic of the `pandoc-tex-numbering` filter can be roughly illustrated as follows:
+1. Prepare the global settings and variables (`prepare` function).
+2. Construct the Formater objects for various types of items: figures, tables, equations, sections, theorems, etc. (`prepare` function).
+3. Initialize a core NumberingState object (`doc.num_state`) with the Formater objects  (`prepare` function).
+4. Walk through the document to construct the reference dictionary (`doc.ref_dict`) (a series of `find_label_{item_type}` functions):
+    - Call `next_{item_type}` method of the NumberingState object to increment the numbering of a specific type of item.
+    - Save the `Numbering` object to the reference dictionary (`doc.ref_dict`) with the label as the key.
+    - Modify some *inplace numbering* elements with `num.src` (e.g. add numbering to the caption of a figure, add numbering to the math block).
+5. Walk through the document again to replace all references with the formatted strings (mainly `labels2refs` function).
+6. Finalize the document (`finalize` function):
+    - Wrap the math blocks and some tables with div elements to add identifiers.
+    - Export the reference dictionary to a json file if needed.
+    - Clean up the global variables.
+
 ## Custom Non-Arabic Numbers Support
 
 Currently, the filter supports only Chinese non-arabic numbers. If you want to support other languages, you can modify the `lang_num.py` file. For example, if you want to support the non-arabic numbers in the language `foo`, you can:
@@ -338,16 +370,6 @@ Currently, the filter supports only Chinese non-arabic numbers. If you want to s
 2. Add the function to the `language_functions` dictionary with the corresponding language name as the key, for example `{"foo":arabic2foo}`.
 
 Then you can set the metadata `section-format-1="Chapter {h1_foo}."` to enable the non-arabic numbers in the filter.
-
-## Custom Numbering Format
-
-To keep the design of the filter simple and easy to use, the filter only supports a limited number of numbering formats. However, complex formats can easily be extended by modifying the logic in the `action_replace_refs` function.
-
-## Extend the Filter
-
-The logical structure of the filter is quiet straightforward. You can see this filter as a scaffold for your own filter. For example, `_parse_multiline_environment` function receives a latex math node and the doc object and returns a new modified math string with the numbering and respective labels. You can add your customized latex syntax analysis logic to support more complicated circumstances.
-
-It is recommended to decalre all your possible variables in the `prepare` function, and save them in the `doc.pandoc_tex_numbering:dict` object. This object will be automatically destroyed after the filter is executed.
 
 ## Advanced docx Support
 
