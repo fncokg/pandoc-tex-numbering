@@ -79,7 +79,7 @@ language_functions = {
     "roman": arabic2lower_roman,
     "latin": arabic2lower_latin,
     "Latin": arabic2upper_latin,
-    "grekk": arabic2lower_greek,
+    "greek": arabic2lower_greek,
     "Greek": arabic2upper_greek,
     "cyrillic": arabic2lower_cyrillic,
     "Cyrillic": arabic2upper_cyrillic

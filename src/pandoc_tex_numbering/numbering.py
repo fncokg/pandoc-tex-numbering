@@ -200,7 +200,7 @@ class NumberingState:
     
     @property
     def current_sec_nums(self):
-        return self.sec[:self.reset_level] if self.isin_apx else self.apx[:self.reset_level]
+        return self.apx[:self.reset_level] if self.isin_apx else self.sec[:self.reset_level]
     
     def current_sec(self,level):
         if level <=0: return None

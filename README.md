@@ -285,13 +285,14 @@ With the testing file `tests/test.tex`:
 ## Default Metadata
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering test.tex -M theorem-names="thm,lem"
+pandoc test.tex -o output.docx -F pandoc-tex-numbering -M theorem-names="thm,lem" -M appendix-names="Appendix"
 ```
 
 The results are shown as follows:
 
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/default-page1.jpg?raw=true)
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/default-page2.jpg?raw=true)
+![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/default-page3.jpg?raw=true)
 
 ## Customized Metadata
 
@@ -307,13 +308,17 @@ In the following example, we custom the following **silly** items *only for the 
   - For figures:
     - at the beginning of captions, use styles like `Figure 1.1:1`
     - when referred to, use styles like `as shown in Fig. 1.1.1,`
-  - For equations, at the end of equations, use styles like `(1-1-1)`
+  - For equations, suppress the parentheses and use the format `1.1.1`
   - For subfigures:
     - use greek letters for symbols
     - at the beginning of captions, use styles like `[β(1)]`
   - For theorems:
     - Theorem environment "thm" uses "Theorem" as the prefix
     - Lemma environment "lem" uses "Lemma" as the prefix
+  - For appendices:
+    - Suppress the top level appendix number
+    - Use (upper case) Roman numbers for the second level appendices
+    - Suppress the top level numbering in all references
 - Turn on custom list of figures and tables and:
   - Use custom titles as "图片目录" and "Table Lists" respectively.
   - Use hyphens as the leader in the lists.
@@ -331,31 +336,45 @@ pandoc -o output.docx -F pandoc-tex-numbering --metadata-file test.yaml -f latex
 
 ```yaml
 # test.yaml
+number-reset-level: 2
 theorem-names: "thm,lem"
+appendix-names: "Appendix"
+
+# Prefix Settings
 figure-prefix: Fig
 table-prefix: Tab
 equation-prefix: Eq
 theorem-thm-prefix: Theorem
 theorem-lem-prefix: Lemma
-number-reset-level: 2
-non-arabic-numbers: true
+
+# Numbering Style Settings
+subfigure-numstyle: "greek"
+appendix-numstyle-2: "Roman"
+
+# Formatting Settings
 section-src-format-1: "第{h1_zh}章"
-section-src-format-2: "Section {h1}.{h2}."
+section-src-format-2: "Section {num}."
 section-cref-format-1: "chapter {h1}"
-section-cref-format-2: "第{h1}.{h2}节"
-table-src-format: "Table {h1}-{h2}-{tab_id}"
-table-cref-format: "table {tab_id} (in Section {h1}.{h2})"
-figure-src-format: "Figure {h1}.{h2}:{fig_id}"
+section-cref-format-2: "第{num}节"
+table-src-format: "Table {h1}-{h2}-{this_num}"
+table-cref-format: "table {this_num} (in Section {parent_num})"
+figure-src-format: "Figure {parent_num}:{this_num}"
 figure-cref-format: "as shown in Fig. {num}"
-equation-src-format: "\\qquad({h1}-{h2}-{eq_id})"
-subfigure-src-format: "[{subfig_sym}({subfig_id})]"
-subfigure-symbols: "αβγδεζηθικλμνξοπρστυφχψω"
+equation-src-format: "\\qquad {num}"
+subfigure-src-format: "[{this_num}({subfig_id})]"
+appendix-src-format-1: "" # Suppress the top level appendix number
+appendix-ref-format-2: "{this_num}"
+appendix-src-format-2: "Appendix {this_num}"
+
+# List of Figures and List of Tables Settings
 custom-lot: true
 custom-lof: true
 lot-title: "Table List"
 lof-title: "图片目录"
 list-leader-type: "hyphen"
 data-export-path: "data.json"
+
+# Multiple Reference Settings
 multiple-ref-suppress: false
 multiple-ref-separator: "、"
 multiple-ref-last-separator: "\\ &\\ "
