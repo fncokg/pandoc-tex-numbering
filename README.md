@@ -1,5 +1,5 @@
 # pandoc-tex-numbering
-This is an all-in-one pandoc filter for converting your LaTeX files to any format while keeping **numbering, hyperlinks, caption formats and (clever) cross references in (maybe multi-line) equations, sections, figures, tables and theorems**. The formating is highly customizable, easy-to-use, and even more flexible than the LaTeX default.
+This is an all-in-one pandoc filter for converting your LaTeX files to any format while keeping **numbering, hyperlinks, caption formats and (clever) cross references in (maybe multi-line) equations, sections, figures, tables, theorems and appendices**. The formating is highly customizable, easy-to-use, and even more flexible than the LaTeX default.
 
 # Contents
 - [pandoc-tex-numbering](#pandoc-tex-numbering)
@@ -11,6 +11,7 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
 - [Quick Start](#quick-start)
 - [Customization](#customization)
   - [General](#general)
+  - [Numbering System](#numbering-system)
   - [Formatting System](#formatting-system)
     - [Prefix-based System](#prefix-based-system)
     - [Custom Formatting System (f-string formatting)](#custom-formatting-system-f-string-formatting)
@@ -20,8 +21,7 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
   - [Theorems](#theorems)
   - [List of Figures and Tables](#list-of-figures-and-tables)
   - [Multiple References](#multiple-references)
-- [Details](#details)
-  - [Equations](#equations-1)
+  - [Appendix](#appendix)
   - [List of Figures and Tables](#list-of-figures-and-tables-1)
   - [Data Export](#data-export)
   - [Log](#log)
@@ -41,7 +41,8 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
 - **`cleveref` Package**: `cref` and `Cref` commands are supported. You can customize the prefix of the references.
 - **Subfigures**: `subcaption` package is supported. Subfigures can be numbered with customized symbols and formats.
 - **Theorems**: Theorems are supported with customized formats.
-- **Non-Arabic Numbers**: Chinese numbers "第一章", "第二节" etc. are supported. You can customize the numbering format.
+- **Appendices**: Appendices are supported with customized formats.
+- **Non-Arabic Numbers**: Various non-arabic numbers are supported, such as Latin letters, Chinese, Roman, Greek, Cyrillic, etc.
 - **Custom List of Figures and Tables**: **Short captions** as well as custom lof/lot titles are supported for figures and tables.
 - **Custom Formatting of Everything**: You can customize the format of the numbering and references with python f-string format based on various fields we provide.
 
@@ -84,6 +85,26 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `data-export-path`: Where to export the filter data. Default is `None`, which means no data will be exported. If set, the data will be exported to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter-debugging.
 - `auto-labelling`: Whether to automatically add identifiers (labels) to figures and tables without labels. Default is `true`. This has no effect on the output appearance but can be useful for cross-referencing in the future (for example, in the `.docx` output this will ensure that all your figures and tables have a unique auto-generated bookmark).
 
+## Numbering System
+- `{item_type}-numstyle`: The style of the numbering of figures, tables, equations, sections, theorems, subfigures. For example `figure-numstyle` represents the style of the numbering of figures.
+- `{item_type}-numstyle-{i}`: The style of the i-th level of the numbering of sections or appendices. For example, `section-numstyle-1` represents the style of the first level of the numbering of sections.
+
+Possible values are:
+- `arabic`: Arabic numbers (1, 2, 3, ...)
+- `roman`: Lowercase Roman numbers (i, ii, iii, ...)
+- `Roman`: Uppercase Roman numbers (I, II, III, ...)
+- `latin`: Lowercase Latin numbers (a, b, c, ...)
+- `Latin`: Uppercase Latin numbers (A, B, C, ...)
+- `greek`: Lowercase Greek numbers (α, β, γ, ...)
+- `Greek`: Uppercase Greek numbers (Α, Β, Γ, ...)
+- `cyrillic`: Lowercase Cyrillic numbers (а, б, в, ...)
+- `Cyrillic`: Uppercase Cyrillic numbers (А, Б, В, ...)
+- `zh`: Chinese numbers (一, 二, 三, ...)
+
+Default values of most of the items are `arabic`. Exceptions are:
+- Default value of `subfigure-numstyle` is `latin`.
+- Default value of `appendix-numstyle-1` is `Latin`.
+
 ## Formatting System
 
 We support a very flexible formatting system for the numbering and references. There are two different formatting systems for the numbering and references. You can use them together. The two systems are:
@@ -119,18 +140,28 @@ For sections, every level has its own formatting. You can set the metadata, for 
 For equations, the default `src` format (i.e. `equation-src-format`) is `"\\qquad({num})"`. `\qquad` is used to offer a little space between the equation and the number. You can customize it as you like.
 
 #### Metadata Values
-The metadata values are python f-string format strings. Various fields are provided for you to customize the format. For example, if you set the `number-reset-level` to 2, `figure-prefix` to `figure` and `prefix-space` to `True`. Then, the fifth figure under subsection 2.3 will have the following fields:
-- `num`: `2.3.5`
-- `parent_num`: `2.3`
+The metadata values are python f-string format strings. Various fields are provided for you to customize the format. For example, if you have the following settings:
+- `number-reset-level`: `2`
+- `figure-prefix`:`"figure"`
+- `prefix-space` to `True`. 
+- `section-numstyle-1`: `"Roman"`
+- `figure-numstyle`: `"latin"`
+
+Then, the fifth figure under subsection 2.3 will have the following fields:
+- `num`: `II.3.e`
+- `parent_num`: `II.3`
+- `this_num`: `e` (note that the fields ended with `_num` will keep the numbering style settings)
 - `fig_id`: `5`
 - `prefix`: `figure ` (note the space at the end)
 - `Prefix`: `Figure `
 - `h1`: `2`
 - `h2`: `3`（note that `h2` is accessible only when the `number-reset-level` >= 2 and so on）
-- `h1_zh`: `二` (Chinese number support)
-- `h2_zh`: `三`
-
-For the subfigures, a special field `subfig_sym` is provided to represent the symbol of the subfigure. For example, if you set the `subfigure-symbols` metadata to `"αβγδ"`, the second subfigure will have the `subfig_sym` field as `"β"` while the `subfig_id` field as `2`.
+- `h1_zh`: `二`
+- `h1_roman`: `ii`
+- `h1_Roman`: `II`
+- `h1_latin`: `b`
+- `h1_Latin`: `B`
+- ... (any supported languages or symbols, see the [Numbering System](#numbering-system) section)
 
 Here are some examples of the metadata values:
 - set the `fig-src-format` metadata to `"{prefix}{num}"`, the numbering before its caption will be shown as "Figure 2.3.5"
@@ -167,6 +198,15 @@ For more details, see the [List of Figures and Tables](#list-of-figures-and-tabl
 - `multiple-ref-to`: The separator between suppressed multiple references. Default is "-". For example, if you set it to " to ", the multiple references will be shown as "equations 1 to 4".
 
 NOTE: in case of setting metadata in a yaml file, the spaces at the beginning and the end of the values are by default stripped. Therefore, if you want to keep the spaces in the yaml metadata file, **you should mannually escape those spaces via double slashes.** For example, if you want set `multiple-ref-last-separator` to `" and "` (spaces appear at the beginning and the end), you should set it as `"\\ and\\ "` in the yaml file. See pandoc's [issue #10539](https://github.com/jgm/pandoc/issues/10539) for more further discussions.
+
+## Appendix
+- `appendix-names`: The names of the appendices separated by "/,". If you have this in your tex file:
+  ```latex
+    \appendix
+    \chapter{First Appendix}
+    \chapter{Second Appendix}
+    ```
+    You should set the metadata `appendix-names` to `"First Appendix/,Second Appendix"`. Note that the names should be separated by `"/,"`, not by `","` (so as to avoid conflicts with the commas in the names).
 
 # Details
 

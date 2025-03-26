@@ -12,9 +12,9 @@ def header_fields(header_nums):
         })
     return fields
 
-def nums2fields(nums,item_type,num_style="plain",prefix=None,pref_space=True,parent=None):
+def nums2fields(nums,item_type,num_style="arabic",prefix=None,pref_space=True,parent=None):
     parent_num = parent.ref if not parent is None else ""
-    if num_style == "plain":
+    if num_style == "arabic":
         this_num = str(nums[-1])
     else:
         assert num_style in language_functions, f"Invalid num_style: {num_style}, must be one of {list(language_functions.keys())}"
@@ -48,7 +48,7 @@ def nums2fields(nums,item_type,num_style="plain",prefix=None,pref_space=True,par
     return {**common_fields,**add_fields}
 
 class Formater:
-    def __init__(self,fmt_presets,item_type,num_style="plain",prefix=None,pref_space=True):
+    def __init__(self,fmt_presets,item_type,num_style="arabic",prefix=None,pref_space=True):
         self.fmt_presets = fmt_presets
         self.item_type = item_type
         self.num_style = num_style

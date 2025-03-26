@@ -71,7 +71,7 @@ def prepare(doc):
         "lot_title": doc.get_metadata("lot-title", "List of Tables"),
 
         # Appendix Settings
-        "apx_names": doc.get_metadata("appendix-names", "Appendix").split("\,"),
+        "apx_names": doc.get_metadata("appendix-names", "Appendix").split("/,"),
 
         # Miscellaneous
         "data_export_path": doc.get_metadata("data-export-path", None),
@@ -135,7 +135,7 @@ def prepare(doc):
             item_type=item,
             prefix=doc.get_metadata(f"{aka[item]}-prefix", aka[item].capitalize()),
             pref_space=pref_space,
-            num_style=doc.get_metadata(f"{aka[item]}-numstyle", "plain")
+            num_style=doc.get_metadata(f"{aka[item]}-numstyle", "arabic")
         )
     
     for thm_type in doc.settings["theorem_names"]:
@@ -154,7 +154,7 @@ def prepare(doc):
             item_type=item_type,
             prefix=doc.get_metadata(f"theorem-{thm_type}-prefix", thm_type.capitalize()),
             pref_space=pref_space,
-            num_style=doc.get_metadata(f"theorem-{thm_type}-numstyle", "plain")
+            num_style=doc.get_metadata(f"theorem-{thm_type}-numstyle", "arabic")
         )
 
     
@@ -168,7 +168,7 @@ def prepare(doc):
         item_type="subfig",
         prefix=doc.get_metadata("subfigure-prefix", "Figure"),
         pref_space=pref_space,
-        num_style=doc.get_metadata("subfigure-numstyle", "letter")
+        num_style=doc.get_metadata("subfigure-numstyle", "latin")
     )
 
     formaters["sec"] = []
@@ -186,9 +186,9 @@ def prepare(doc):
                 fmt = doc.get_metadata(f"{aka[item]}-{preset}-format-{i}", default)
                 fmt_presets[preset] = fmt
             if item == "apx" and i == 1:
-                default_numstyle = "Letter"
+                default_numstyle = "Latin"
             else:
-                default_numstyle = "plain"
+                default_numstyle = "arabic"
             i_th_formater = Formater(
                 fmt_presets=fmt_presets,
                 item_type=item,
@@ -361,7 +361,6 @@ def add_label_to_caption(num_obj,label:str,elem:Union[Figure,Table]):
 
 
 def find_labels_header(elem,doc):
-    logger.info(f"Finding labels in header: {elem} with level {elem.level}")
     this_level = elem.level
     if this_level == 1:
         header_txt = to_string(elem)

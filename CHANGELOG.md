@@ -1,6 +1,23 @@
+# 1.3.0 (2025-03-26)
+Support various custom numbering styles in a more clear and flexible way:
+- support various and auto-extend numbering symbols: arabic numbers, roman numbers, latin/greek/cyrillic letters (both upper and lower case), Chinese numbers, etc.
+- support custom numbering symbols for anything: any level of section, figure, table, equation, theorem, etc.
+
+Support appendix numbering.
+
+Metadata `{item_type}-symbols` and fields `{item_type}_sym` are no longer supported.
+
+## Migration Guide
+For people who are using 1.2.x version, there are some **removals**:
+
+The following metadata keys have already marked as deprecated in the previous version, and they are now **removed**:
+- metadata keys `section-format-source-i` and `section-format-ref-i` for the i-the level section numbering formatting are now removed. You should use the new `section-src-format-i` and `section-cref-format-i` keys instead.
+
+The following features are now **removed**, and you should use the new API instead:
+- metadata keys `{item_type}-symbols` and formatting fields `{item_type}_sym` are now removed. Now you can simply use `{item_type}-numstyle` to specify the numbering style directly.
+
 # 1.2.5 (2025-03-13)
 Support theorem numbering. Also refer to a [StackExchange question](https://tex.stackexchange.com/questions/738132/simultaneously-cross-referencing-numbered-amsthm-theorems-and-numbered-equations).
-
 
 # 1.2.4 (2025-03-07)
 Support customizable spacing command in the `equation-src-format` field (default now is `"\\quad({num})"`). Also refer to issue #11.
