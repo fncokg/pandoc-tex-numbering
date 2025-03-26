@@ -70,6 +70,9 @@ def prepare(doc):
         "lof_title": doc.get_metadata("lof-title", "List of Figures"),
         "lot_title": doc.get_metadata("lot-title", "List of Tables"),
 
+        # Appendix Settings
+        "apx_names": doc.get_metadata("appendix-names", "Appendix").split("\,"),
+
         # Miscellaneous
         "data_export_path": doc.get_metadata("data-export-path", None),
         "auto_labelling": doc.get_metadata("auto-labelling", True),
@@ -111,6 +114,7 @@ def prepare(doc):
         "eq": "equation",
         "sec": "section",
         "subfig": "subfigure",
+        "apx": "appendix",
     }
     formaters = {"thm":{}}
     pref_space = doc.get_metadata("prefix-space", True)
@@ -130,7 +134,8 @@ def prepare(doc):
             fmt_presets=fmt_presets,
             item_type=item,
             prefix=doc.get_metadata(f"{aka[item]}-prefix", aka[item].capitalize()),
-            pref_space=pref_space
+            pref_space=pref_space,
+            num_style=doc.get_metadata(f"{aka[item]}-numstyle", "plain")
         )
     
     for thm_type in doc.settings["theorem_names"]:
@@ -148,7 +153,8 @@ def prepare(doc):
             fmt_presets=fmt_presets,
             item_type=item_type,
             prefix=doc.get_metadata(f"theorem-{thm_type}-prefix", thm_type.capitalize()),
-            pref_space=pref_space
+            pref_space=pref_space,
+            num_style=doc.get_metadata(f"theorem-{thm_type}-numstyle", "plain")
         )
 
     
@@ -162,36 +168,35 @@ def prepare(doc):
         item_type="subfig",
         prefix=doc.get_metadata("subfigure-prefix", "Figure"),
         pref_space=pref_space,
-        ids2syms=list(doc.get_metadata("subfigure-symbols", string.ascii_lowercase))
+        num_style=doc.get_metadata("subfigure-numstyle", "letter")
     )
 
     formaters["sec"] = []
-
-    for i in range(1,max_levels+1):
-        i_th_formater = Formater(
-            fmt_presets={
-                "src":doc.get_metadata(f"section-src-format-{i}", None),
-                "ref":doc.get_metadata(f"section-ref-format-{i}", "{num}"),
-                "cref":doc.get_metadata(f"section-cref-format-{i}", "{prefix}{num}"),
-                "Cref":doc.get_metadata(f"section-Cref-format-{i}", None)
-            },
-            item_type="sec",
-            prefix=doc.get_metadata(f"section-prefix", "Section"),
-            pref_space=pref_space
-        )
-        
-        # Backward compatibility
-        # Will be removed in the version 1.3.0
-        _old_src_fmt = doc.get_metadata(f"section-format-source-{i}", None)
-        _old_cref_fmt = doc.get_metadata(f"section-format-ref-{i}", None)
-        if not _old_src_fmt is None:
-            warnings.warn(f"section-format-source-{i} is deprecated and will be removed in the version 1.3.0. Please use section-src-format-{i} instead.",DeprecationWarning)
-            i_th_formater.fmt_presets["src"] = _old_src_fmt
-        if not _old_cref_fmt is None:
-            warnings.warn(f"section-format-ref-{i} is deprecated and will be removed in the version 1.3.0. Please use section-ref-format-{i} instead.",DeprecationWarning)
-            i_th_formater.fmt_presets["cref"] = _old_cref_fmt
-
-        formaters["sec"].append(i_th_formater)
+    formaters["apx"] = []
+    
+    for item in ["apx","sec"]:
+        for i in range(1,max_levels+1):
+            fmt_presets = {}
+            for preset,default in [
+                ["src",None],
+                ["ref","{num}"],
+                ["cref","{prefix}{num}"],
+                ["Cref",None]
+            ]:
+                fmt = doc.get_metadata(f"{aka[item]}-{preset}-format-{i}", default)
+                fmt_presets[preset] = fmt
+            if item == "apx" and i == 1:
+                default_numstyle = "Letter"
+            else:
+                default_numstyle = "plain"
+            i_th_formater = Formater(
+                fmt_presets=fmt_presets,
+                item_type=item,
+                prefix=doc.get_metadata(f"{aka[item]}-prefix", aka[item].capitalize()),
+                pref_space=pref_space,
+                num_style=doc.get_metadata(f"{aka[item]}-numstyle-{i}", default_numstyle)
+            )
+            formaters[item].append(i_th_formater)
     
     # Initialize a numbering state object
     doc.num_state = NumberingState(
@@ -356,8 +361,12 @@ def add_label_to_caption(num_obj,label:str,elem:Union[Figure,Table]):
 
 
 def find_labels_header(elem,doc):
-    doc.num_state.next_sec(level=elem.level)
-    num_obj = doc.num_state.current_sec(level=elem.level)
+    this_level = elem.level
+    if this_level == 1:
+        header_txt = to_string(elem)
+        doc.num_state.isin_apx = header_txt in doc.settings["apx_names"]
+    doc.num_state.next_sec(level=this_level)
+    num_obj = doc.num_state.current_sec(level=this_level)
     for child in elem.content:
         if isinstance(child,Span) and "label" in child.attributes:
             label = child.attributes["label"]

@@ -12,10 +12,18 @@ def header_fields(header_nums):
         })
     return fields
 
-def nums2fields(nums,item_type,ids2syms=None,prefix=None,pref_space=True):
+def nums2fields(nums,item_type,num_style="plain",prefix=None,pref_space=True,parent=None):
+    parent_num = parent.ref if not parent is None else ""
+    if num_style == "plain":
+        this_num = str(nums[-1])
+    else:
+        assert num_style in language_functions, f"Invalid num_style: {num_style}, must be one of {list(language_functions.keys())}"
+        this_num = language_functions[num_style](nums[-1])
+    num = f"{parent_num}.{this_num}" if parent_num!="" else this_num
     common_fields = {
-        "num": ".".join(map(str,nums)),
-        "parent_num": ".".join(map(str,nums[:-1])),
+        "num": num,
+        "parent_num": parent_num,
+        "this_num": this_num,
     }
     if not prefix is None:
         prefix = prefix.strip()
@@ -24,7 +32,7 @@ def nums2fields(nums,item_type,ids2syms=None,prefix=None,pref_space=True):
             "prefix": prefix.lower(),
             "Prefix": prefix.capitalize()
         })
-    if item_type == "sec":
+    if item_type in ["sec","apx"]:
         add_fields = header_fields(nums)
     elif item_type == "subfig":
         add_fields = {
@@ -37,50 +45,48 @@ def nums2fields(nums,item_type,ids2syms=None,prefix=None,pref_space=True):
             f"{item_type}_id": str(nums[-1]),
             **header_fields(nums[:-1])
         }
-    if ids2syms is not None:
-        add_fields.update({
-            f"{item_type}_sym": ids2syms[nums[-1]]
-        })
     return {**common_fields,**add_fields}
 
 class Formater:
-    def __init__(self,fmt_presets,item_type,ids2syms=None,prefix=None,pref_space=True):
+    def __init__(self,fmt_presets,item_type,num_style="plain",prefix=None,pref_space=True):
         self.fmt_presets = fmt_presets
         self.item_type = item_type
-        self.ids2syms = ids2syms
+        self.num_style = num_style
         self.prefix = prefix
         self.pref_space = pref_space
     
     def __repr__(self):
         return f"Formater({self.item_type})"
     
-    def __call__(self, nums, fmt_preset=None,fmt=None):
+    def __call__(self, nums, fmt_preset=None,fmt=None,parent=None):
         if not fmt_preset is None:
             assert fmt_preset in self.fmt_presets, f"Invalid format type: {fmt_preset}"
             fmt = self.fmt_presets[fmt_preset]
         if fmt is None:
             if fmt_preset == "Cref":
-                return self(nums,fmt_preset="cref").capitalize()
+                cref = self(nums,fmt_preset="cref",parent=parent)
+                return f"{cref[0].upper()}{cref[1:]}"
             elif fmt_preset == "src":
-                return self(nums,fmt_preset="Cref")
+                return self(nums,fmt_preset="Cref",parent=parent)
             else:
                 raise ValueError("No valid format provided")
-        fields = nums2fields(nums,self.item_type,self.ids2syms,self.prefix,self.pref_space)
+        fields = nums2fields(nums,self.item_type,self.num_style,self.prefix,self.pref_space,parent)
         if isinstance(fmt,str):
             return fmt.format(**fields)
         elif callable(fmt):
             return fmt(nums)
 
 class Numbering:
-    def __init__(self,item_type,nums,formater=None):
+    def __init__(self,item_type,nums,formater=None,parent=None):
         self.item_type = item_type
         self.nums = nums
         self.formater = formater
         self.caption = None
         self.short_caption = None
+        self.parent = parent
     
     def format(self,fmt_preset=None,fmt=None):
-        return self.formater(self.nums,fmt_preset,fmt)
+        return self.formater(self.nums,fmt_preset,fmt,self.parent)
 
     @property
     def src(self):
@@ -145,22 +151,33 @@ class NumberingState:
     def __init__(self,formaters:dict,reset_level=1,max_levels=10):
         self.reset_level = reset_level
         self.sec = [0]*max_levels
+        self.apx = [0]*max_levels
         self.eq = 0
         self.tab = 0
         self.fig = 0
         self.subfig = 0
         self.thms = {}
         self.formaters = formaters
-            
+        self.isin_apx = False
+
+        # We need to store the current numbering objects for each level since they're frequently accessed in the same level. We cannot create a new object each time considering the RAM usage.
+        self.current_sec_objs = [None]*max_levels
+        self.current_apx_objs = [None]*max_levels
+
     def next_sec(self,level):
-        self.sec[level-1] += 1
-        self.sec[level:] = [0]*(len(self.sec)-level)
+        if self.isin_apx:
+            self.apx[level-1] += 1
+            self.apx[level:] = [0]*(len(self.apx)-level)
+            self.current_apx_objs[level-1:] = [None]*(len(self.current_apx_objs)-level)
+        else:
+            self.sec[level-1] += 1
+            self.sec[level:] = [0]*(len(self.sec)-level)
+            self.current_sec_objs[level-1:] = [None]*(len(self.current_sec_objs)-level)
         if level <= self.reset_level:
             self.eq = 0
             self.tab = 0
             self.fig = 0
             self.subfig = 0
-            # we don't reset theorems
     
     def next_eq(self):
         self.eq += 1
@@ -183,27 +200,38 @@ class NumberingState:
     
     @property
     def current_sec_nums(self):
-        return self.sec[:self.reset_level]
+        return self.sec[:self.reset_level] if self.isin_apx else self.apx[:self.reset_level]
     
     def current_sec(self,level):
-        return Numbering("sec",self.sec[:level],self.formaters["sec"][level-1])
+        if level <=0: return None
+        if self.isin_apx:
+            item_type = "apx"
+            obj_list = self.current_apx_objs
+            num_list = self.apx
+        else:
+            item_type = "sec"
+            obj_list = self.current_sec_objs
+            num_list = self.sec
+        if obj_list[level-1] is None:
+            obj_list[level-1] = Numbering(item_type,num_list[:level],self.formaters[item_type][level-1],parent=self.current_sec(level-1))
+        return obj_list[level-1]
     
     def current_eq(self):
-        return Numbering("eq",self.current_sec_nums+[self.eq],self.formaters["eq"])
+        return Numbering("eq",self.current_sec_nums+[self.eq],self.formaters["eq"],parent=self.current_sec(self.reset_level))
     
     def current_tab(self):
-        return Numbering("tab",self.current_sec_nums+[self.tab],self.formaters["tab"])
+        return Numbering("tab",self.current_sec_nums+[self.tab],self.formaters["tab"],parent=self.current_sec(self.reset_level))
     
     def current_fig(self,subfig=False):
         if subfig:
-            return Numbering("subfig",self.current_sec_nums+[self.fig,self.subfig],self.formaters["subfig"])
+            return Numbering("subfig",self.current_sec_nums+[self.fig,self.subfig],self.formaters["subfig"],parent=self.current_fig(False))
         else:
-            return Numbering("fig",self.current_sec_nums+[self.fig],self.formaters["fig"])
+            return Numbering("fig",self.current_sec_nums+[self.fig],self.formaters["fig"],parent=self.current_sec(self.reset_level))
     
     def current_thm(self,thm_type):
         if not thm_type in self.thms:
             self.thms[thm_type] = 0
-        return Numbering(f"thm-{thm_type}",self.current_sec_nums+[self.thms[thm_type]],self.formaters["thm"][thm_type])
+        return Numbering(f"thm-{thm_type}",self.current_sec_nums+[self.thms[thm_type]],self.formaters["thm"][thm_type],parent=self.current_sec(self.reset_level))
 
 def numberings2chunks(numberings,split_continous=True):
     numberings = sorted(numberings)

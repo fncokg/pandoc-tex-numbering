@@ -1,4 +1,18 @@
 # Here, we define the functions to convert arabic numbers to different languages
+def _num2base(num,base):
+    if num == 0: return [0]
+    nums = []
+    while num > 0:
+        num, r = divmod(num, base)
+        nums.append(r)
+    return nums[::-1]
+
+def _from_seq(seq,num,zero_str="0"):
+    if num == 0:
+        return zero_str
+    nums = _num2base(num-1,len(seq))
+    return "".join([seq[n] for n in nums])
+
 def arabic2chinese(num):
     chinese_numerals = "零一二三四五六七八九"
     units = ["", "十", "百", "千", "万", "十", "百", "千", "亿"]
@@ -19,6 +33,40 @@ def arabic2chinese(num):
         result = result[1:]
     return result
 
+def arabic2roman(num):
+    if num == 0: return "0"
+    breaks = [1000,900,500,400,100,90,50,40,10,9,5,4,1]
+    numerals = ["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"]
+    result = ""
+    while num>0:
+        for b,n in zip(breaks,numerals):
+            if num >= b:
+                result += n
+                num -= b
+                continue
+    return result
+
+def arabic2upper_latina(num):
+    upper_latina_numerals = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    return _from_seq(upper_latina_numerals,num)
+
+def arabic2lower_latina(num):
+    lower_latina_numerals = "abcdefghijklmnopqrstuvwxyz"
+    return _from_seq(lower_latina_numerals,num)
+
+def arabic2upper_greek(num):
+    upper_greek_numerals = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
+    return _from_seq(upper_greek_numerals,num)
+
+def arabic2lower_greek(num):
+    lower_greek_numerals = "αβγδεζηθικλμνξοπρστυφχψω"
+    return _from_seq(lower_greek_numerals,num)
+
 language_functions = {
-    "zh": arabic2chinese
+    "zh": arabic2chinese,
+    "roman": arabic2roman,
+    "letter": arabic2lower_latina,
+    "Letter": arabic2upper_latina,
+    "gletter": arabic2lower_greek,
+    "Gletter": arabic2upper_greek,
 }
