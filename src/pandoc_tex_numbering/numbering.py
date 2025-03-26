@@ -168,11 +168,11 @@ class NumberingState:
         if self.isin_apx:
             self.apx[level-1] += 1
             self.apx[level:] = [0]*(len(self.apx)-level)
-            self.current_apx_objs[level-1:] = [None]*(len(self.current_apx_objs)-level)
+            self.current_apx_objs[level-1:] = [None]*(len(self.current_apx_objs)-level+1)
         else:
             self.sec[level-1] += 1
             self.sec[level:] = [0]*(len(self.sec)-level)
-            self.current_sec_objs[level-1:] = [None]*(len(self.current_sec_objs)-level)
+            self.current_sec_objs[level-1:] = [None]*(len(self.current_sec_objs)-level+1)
         if level <= self.reset_level:
             self.eq = 0
             self.tab = 0

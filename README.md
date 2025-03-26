@@ -395,3 +395,6 @@ There are some known issues and possible improvements:
 - [x] Subfigure support.
 - [x] Support short captions in `docx` output.
 - [ ] Support right-aligned equation numbers.
+- [ ] A separate documentation page.
+- [ ] Testing scripts.
+- [ ] How-tos.

@@ -160,9 +160,9 @@ def prepare(doc):
     
     formaters["subfig"] = Formater(
         fmt_presets={
-            "src":doc.get_metadata("subfigure-src-format", "({subfig_sym})"),
-            "ref":doc.get_metadata("subfigure-ref-format", "{parent_num}({subfig_sym})"),
-            "cref":doc.get_metadata("subfigure-cref-format", "{prefix}{parent_num}({subfig_sym})"),
+            "src":doc.get_metadata("subfigure-src-format", "({this_num})"),
+            "ref":doc.get_metadata("subfigure-ref-format", "{parent_num}({this_num})"),
+            "cref":doc.get_metadata("subfigure-cref-format", "{prefix}{parent_num}({this_num})"),
             "Cref":doc.get_metadata("subfigure-Cref-format", None)
         },
         item_type="subfig",
@@ -361,6 +361,7 @@ def add_label_to_caption(num_obj,label:str,elem:Union[Figure,Table]):
 
 
 def find_labels_header(elem,doc):
+    logger.info(f"Finding labels in header: {elem} with level {elem.level}")
     this_level = elem.level
     if this_level == 1:
         header_txt = to_string(elem)

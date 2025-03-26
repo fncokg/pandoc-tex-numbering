@@ -132,6 +132,34 @@ Here is a single line equation:
 
 We can refer to the two theorems as follows: \Cref{thm:pythagorean} (Cref) is the Pythagorean theorem, \cref{thm:another} (cref) is another theorem. The triangle inequality is stated in \cref{lem:triangle_inequality} (cref). Plain references are also possible: The Pythagorean theorem is \ref{thm:pythagorean} (ref).
 
+\appendix
+
+\section{Appendix}
+
+\subsection{Appendix Equations}
+Here is an equation in the appendix:
+
+\begin{equation}
+    \begin{aligned}
+        f(x) &= x^3 + 3x^2 + 3x + 1 \\
+        g(x) &= \cos(x)
+    \end{aligned}
+    \label{eq:cubic}
+\end{equation}
+
+\subsection{Appendix Figures}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{./example-image}
+    \caption{This is an example image in the appendix.}
+    \label{fig:appendix}
+\end{figure}
+
+\subsection{Appendix Texts}
+
+Refer to the appendix figure \cref{fig:appendix} (ref) and the appendix equation \cref{eq:cubic} (ref).
+
 \listoffigures
 
 \listoftables
