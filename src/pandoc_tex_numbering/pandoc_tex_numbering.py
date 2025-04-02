@@ -271,6 +271,8 @@ def finalize(doc):
     del doc.num_state
     del doc.ref_dict
 
+    logger.info("Finished pandoc-tex-numbering")
+
 def _parse_multiline_environment(root_node,doc):
     labels = {}
     environment_body = ""
