@@ -12,6 +12,7 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
 - [Customization](#customization)
   - [General](#general)
   - [Numbering System](#numbering-system)
+  - [Numbering Offset](#numbering-offset)
   - [Formatting System](#formatting-system)
     - [Prefix-based System](#prefix-based-system)
     - [Custom Formatting System (f-string formatting)](#custom-formatting-system-f-string-formatting)
@@ -104,6 +105,12 @@ Possible values are:
 Default values of most of the items are `arabic`. Exceptions are:
 - Default value of `subfigure-numstyle` is `latin`.
 - Default value of `appendix-numstyle-1` is `Latin`.
+
+## Numbering Offset
+You can add an offset to any type of numbering so that the numbering starts from a specific number instead of 1.
+- `{item_type}-offset`: The offset of the numbering of figures, tables, equations, subfigures. For example `figure-offset` represents the offset of the numbering of figures.
+- `{item-type}-offset-{i}`: The offset of the i-th level of the numbering of sections or appendices. For example, `section-offset-1` represents the offset of the first level of the numbering of sections.
+- `theorem-{theorem_name}-offset`: The offset of the theorem numbering. Default is `0`. For example, if you have `\newtheorem{thm}{Theorem}`, when you set the metadata `theorem-thm-offset` to `1`, the first theorem will be numbered as "Theorem 2" instead of "Theorem 1".
 
 ## Formatting System
 
@@ -302,12 +309,14 @@ In the following example, we custom the following **silly** items *only for the 
   - For sections:
     - at the beginning of sections, use Chinese numbers "第一章" for the first level sections and English numbers "Section 1.1" for the second level sections.
     - when referred to, use, in turn, "Chapter 1", "第1.1节" etc.
+    - add an offset of 5 to the second level sections, such that the first second level section will be numbered as "Section 1.6".
   - For tables:
     - at the beginning of captions, use styles like `Table 1-1-1`
     - when referred to, use styles like `table 1 (in Section 1.1)`
   - For figures:
     - at the beginning of captions, use styles like `Figure 1.1:1`
     - when referred to, use styles like `as shown in Fig. 1.1.1,`
+    - add an offset of 3 to the figures, such that the first figure will be numbered as `Figure 1.1:4`.
   - For equations, suppress the parentheses and use the format `1.1.1`
   - For subfigures:
     - use greek letters for symbols
@@ -339,6 +348,8 @@ pandoc -o output.docx -F pandoc-tex-numbering --metadata-file test.yaml test.tex
 number-reset-level: 2
 theorem-names: "thm,lem"
 appendix-names: "Appendix"
+section-offset-2: 5
+figure-offset: 3
 
 # Prefix Settings
 figure-prefix: Fig
