@@ -3,7 +3,6 @@ import re
 import json
 import string
 import warnings
-from typing import Union
 
 from panflute import *
 from pylatexenc.latexwalker import LatexWalker,LatexEnvironmentNode,LatexMacroNode
@@ -354,7 +353,7 @@ def parse_latex_math(math_str:str,doc):
     return _parse_plain_math(math_str,doc)
 
 
-def add_label_to_caption(num_obj,label:str,elem:Union[Figure,Table]):
+def add_label_to_caption(num_obj,label:str,elem):
     url = f"#{label}" if label else ""
     label_items = [
         Link(Str(num_obj.src), url=url),
