@@ -1,3 +1,10 @@
+# 1.3.1 (2025-04-12)
+Support specifying the numbering offset of any type of numbering.
+
+Some minor bug fixes and improvements:
+- Remove the `\listoffigures` and `\listoftables` command searching process, such that the feature of customizable lot/lof location is no longer supported. This is because: to enable latex command searching, we need to a `raw_tex` input, which in many cases will lead much more errors.
+- Remove some typing for the backward compatibility consideration.
+
 # 1.3.0 (2025-03-26)
 Support various custom numbering styles in a more clear and flexible way:
 - support various and auto-extend numbering symbols: arabic numbers, roman numbers, latin/greek/cyrillic letters (both upper and lower case), Chinese numbers, etc.
