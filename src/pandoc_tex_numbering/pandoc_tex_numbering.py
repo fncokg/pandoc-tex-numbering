@@ -90,7 +90,6 @@ def prepare(doc):
         # We save the links to replace here to avoid searching them in the finalize function
         "links2replace": [],
 
-        # We save locations of the custom list blocks (if any) here to avoid searching them in the finalize function
         "lof_block": None,
         "lot_block": None
     }
@@ -198,11 +197,28 @@ def prepare(doc):
             )
             formaters[item].append(i_th_formater)
     
+    # Offsets
+    offsets = {}
+    for item in ["fig","tab","eq","subfig"]:
+        offset = doc.get_metadata(f"{aka[item]}-offset", 0)
+        if offset != 0:
+            offsets[item] = offset
+    for item in ["sec","apx"]:
+        for i in range(1,max_levels+1):
+            offset = doc.get_metadata(f"{aka[item]}-offset-{i}", 0)
+            if offset != 0:
+                offsets[f"{item}_{i}"] = offset
+    for thm_type in doc.settings["theorem_names"]:
+        offset = doc.get_metadata(f"theorem-{thm_type}-offset", 0)
+        if offset != 0:
+            offsets[f"thm-{thm_type}"] = offset
+            
     # Initialize a numbering state object
     doc.num_state = NumberingState(
         reset_level=int(doc.get_metadata("number-reset-level", 1)),
         max_levels=max_levels,
-        formaters=formaters
+        formaters=formaters,
+        offsets=offsets
     )
 
     doc.ref_dict = {}
@@ -242,16 +258,14 @@ def finalize(doc):
             parent.content.insert(idx,item)
 
     if doc.settings["custom_lot"]:
-        if not doc.global_vars["lot_block"]:
-            doc.content.insert(0,RawBlock("\\listoftables",format="latex"))
-            doc.global_vars["lot_block"] = doc.content[0]
+        doc.content.insert(0,RawBlock("\\listoftables",format="latex"))
+        doc.global_vars["lot_block"] = doc.content[0]
         table_items = extract_captions_from_refdict(doc.ref_dict,"tab",doc)
         add_docx_list(doc.global_vars["lot_block"],table_items,doc.settings["lot_title"],leader_type=doc.settings["list_leader_type"])
 
     if doc.settings["custom_lof"]:
-        if not doc.global_vars["lof_block"]:
-            doc.content.insert(0,RawBlock("\\listoffigures",format="latex"))
-            doc.global_vars["lof_block"] = doc.content[0]
+        doc.content.insert(0,RawBlock("\\listoffigures",format="latex"))
+        doc.global_vars["lof_block"] = doc.content[0]
         figure_items = extract_captions_from_refdict(doc.ref_dict,"fig",doc)
         add_docx_list(doc.global_vars["lof_block"],figure_items,doc.settings["lof_title"],leader_type=doc.settings["list_leader_type"])
     
@@ -464,14 +478,15 @@ def action_find_labels(elem, doc):
         find_labels_figure(elem,doc)
     if isinstance(elem,Table) and doc.settings["num_tab"]:
         find_labels_table(elem,doc)
-    if isinstance(elem,RawBlock) and (doc.settings["custom_lof"] or doc.settings["custom_lot"]) and elem.format == "latex":
-        if "listoffigures" in elem.text:
-            doc.global_vars["lof_block"] = elem
-        if "listoftables" in elem.text:
-            doc.global_vars["lot_block"] = elem
+    # if isinstance(elem,RawBlock) and (doc.settings["custom_lof"] or doc.settings["custom_lot"]) and elem.format == "latex":
+    #     if "listoffigures" in elem.text:
+    #         doc.global_vars["lof_block"] = elem
+    #     if "listoftables" in elem.text:
+    #         doc.global_vars["lot_block"] = elem
     if isinstance(elem,Div):
         if any([cls in doc.settings["theorem_names"] for cls in elem.classes]) and doc.settings["num_theorem"]:
             find_labels_theorem(elem,doc)
+    
 
 def _num2link(num_obj,fmt_preset):
     return Link(Str(num_obj.format(fmt_preset=fmt_preset)),url=f"#{num_obj.label}")

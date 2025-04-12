@@ -1,5 +1,6 @@
 from .lang_num import language_functions
 import logging
+from copy import deepcopy
 logger = logging.getLogger('pandoc-tex-numbering')
 
 def header_fields(header_nums):
@@ -148,90 +149,110 @@ class Numbering:
         return f"{self.item_type}: {'.'.join(map(str,self.nums))}"
 
 class NumberingState:
-    def __init__(self,formaters:dict,reset_level=1,max_levels=10):
+    def __init__(self,formaters:dict,reset_level=1,max_levels=10,offsets:dict=None):
+        
         self.reset_level = reset_level
-        self.sec = [0]*max_levels
-        self.apx = [0]*max_levels
-        self.eq = 0
-        self.tab = 0
-        self.fig = 0
-        self.subfig = 0
-        self.thms = {}
+        self.init_nums = {
+            "sec": [0]*max_levels,
+            "apx": [0]*max_levels,
+            "eq": 0,
+            "tab": 0,
+            "fig": 0,
+            "subfig": 0,
+            "thm": {},
+        }
+        for item,value in offsets.items():
+            value = int(value)
+            if item in ["eq","tab","fig","subfig"]:
+                self.init_nums[item] = value
+                continue
+            item,info = item.split("_")
+            if item in ["sec","apx"]:
+                idx = int(info)-1
+                self.init_nums[item][idx] = value
+            elif item == "thm":
+                self.init_nums[item][info] = value
+            else:
+                logger.warning(f"Invalid offset item: {item}, ignored")
+        logger.info(f"Initial numbering: {self.init_nums}")
+        self.nums = deepcopy(self.init_nums)
         self.formaters = formaters
         self.isin_apx = False
 
         # We need to store the current numbering objects for each level since they're frequently accessed in the same level. We cannot create a new object each time considering the RAM usage.
         self.current_sec_objs = [None]*max_levels
         self.current_apx_objs = [None]*max_levels
+    
+    def reset_nums(self,items:list[str]):
+        for item in items:
+            self.nums[item] = deepcopy(self.init_nums[item])
+
 
     def next_sec(self,level):
         if self.isin_apx:
-            self.apx[level-1] += 1
-            self.apx[level:] = [0]*(len(self.apx)-level)
+            self.nums["apx"][level-1] += 1
+            self.nums["apx"][level:] = deepcopy(self.init_nums["apx"][level:])
             self.current_apx_objs[level-1:] = [None]*(len(self.current_apx_objs)-level+1)
         else:
-            self.sec[level-1] += 1
-            self.sec[level:] = [0]*(len(self.sec)-level)
+            self.nums["sec"][level-1] += 1
+            self.nums["sec"][level:] = deepcopy(self.init_nums["sec"][level:])
             self.current_sec_objs[level-1:] = [None]*(len(self.current_sec_objs)-level+1)
         if level <= self.reset_level:
-            self.eq = 0
-            self.tab = 0
-            self.fig = 0
-            self.subfig = 0
+            self.reset_nums(["eq","tab","fig","subfig"])
     
     def next_eq(self):
-        self.eq += 1
+        self.nums["eq"] += 1
     
     def next_tab(self):
-        self.tab += 1
+        self.nums["tab"] += 1
     
     def next_fig(self):
-        self.fig += 1
-        self.subfig = 0
+        self.nums["fig"] += 1
+        self.reset_nums(["subfig"])
     
     def next_subfig(self):
-        self.subfig += 1
+        self.nums["subfig"] += 1
     
     def next_thm(self,thm_type):
-        if not thm_type in self.thms:
-            self.thms[thm_type] = 1
+        if not thm_type in self.nums["thm"]:
+            self.nums["thm"][thm_type] = 1
         else:
-            self.thms[thm_type] += 1
+            self.nums["thm"][thm_type] += 1
     
     @property
     def current_sec_nums(self):
-        return self.apx[:self.reset_level] if self.isin_apx else self.sec[:self.reset_level]
+        return deepcopy(self.nums["apx"][:self.reset_level]) if self.isin_apx else deepcopy(self.nums["sec"][:self.reset_level])
     
     def current_sec(self,level):
         if level <=0: return None
         if self.isin_apx:
             item_type = "apx"
             obj_list = self.current_apx_objs
-            num_list = self.apx
+            num_list = self.nums["apx"]
         else:
             item_type = "sec"
             obj_list = self.current_sec_objs
-            num_list = self.sec
+            num_list = self.nums["sec"]
         if obj_list[level-1] is None:
             obj_list[level-1] = Numbering(item_type,num_list[:level],self.formaters[item_type][level-1],parent=self.current_sec(level-1))
         return obj_list[level-1]
     
     def current_eq(self):
-        return Numbering("eq",self.current_sec_nums+[self.eq],self.formaters["eq"],parent=self.current_sec(self.reset_level))
+        return Numbering("eq",self.current_sec_nums+[self.nums["eq"]],self.formaters["eq"],parent=self.current_sec(self.reset_level))
     
     def current_tab(self):
-        return Numbering("tab",self.current_sec_nums+[self.tab],self.formaters["tab"],parent=self.current_sec(self.reset_level))
+        return Numbering("tab",self.current_sec_nums+[self.nums["tab"]],self.formaters["tab"],parent=self.current_sec(self.reset_level))
     
     def current_fig(self,subfig=False):
         if subfig:
-            return Numbering("subfig",self.current_sec_nums+[self.fig,self.subfig],self.formaters["subfig"],parent=self.current_fig(False))
+            return Numbering("subfig",self.current_sec_nums+[self.nums["fig"],self.nums["subfig"]],self.formaters["subfig"],parent=self.current_fig(False))
         else:
-            return Numbering("fig",self.current_sec_nums+[self.fig],self.formaters["fig"],parent=self.current_sec(self.reset_level))
+            return Numbering("fig",self.current_sec_nums+[self.nums["fig"]],self.formaters["fig"],parent=self.current_sec(self.reset_level))
     
     def current_thm(self,thm_type):
-        if not thm_type in self.thms:
-            self.thms[thm_type] = 0
-        return Numbering(f"thm-{thm_type}",self.current_sec_nums+[self.thms[thm_type]],self.formaters["thm"][thm_type],parent=self.current_sec(self.reset_level))
+        if not thm_type in self.nums["thm"]:
+            self.nums["thm"][thm_type] = 0
+        return Numbering(f"thm-{thm_type}",self.current_sec_nums+[self.nums["thm"][thm_type]],self.formaters["thm"][thm_type],parent=self.current_sec(self.reset_level))
 
 def numberings2chunks(numberings,split_continous=True):
     numberings = sorted(numberings)

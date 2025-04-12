@@ -253,7 +253,7 @@ If you set the metadata `custom-lof` and `custom-lot` to `true`, the filter will
 
 The captions used in the list of figures and tables are the short captions if they are defined in the LaTeX source code. If not, the full captions are used. The short captions are defined in the LaTeX source code as `\caption[short caption]{full caption}`.
 
-The list of figures and tables will be put at the beginning of the document by default. If you want to put the lists at posistions where the `\listoffigures` and `\listoftables` commands are found in the LaTeX source code, you should pass `-f latex+raw_tex` to the pandoc command. However, currently, **`-f latex+raw_tex` does NOT work if you're using `subfiles` package.**.
+The list of figures and tables will be put at the beginning of the document, since we cannot access the locations of the LaTeX command `\listoffigures` and `\listoftables` in the pandoc filters.
 
 ## Data Export
 
@@ -331,7 +331,7 @@ In the following example, we custom the following **silly** items *only for the 
 Run the following command with corresponding metadata in a `metadata.yaml` file (**recommended**):
 
 ```bash
-pandoc -o output.docx -F pandoc-tex-numbering --metadata-file test.yaml -f latex+raw_tex test.tex
+pandoc -o output.docx -F pandoc-tex-numbering --metadata-file test.yaml test.tex
 ```
 
 ```yaml
@@ -382,6 +382,7 @@ multiple-ref-to: "\\ to\\ "
 ```
 
 The results are shown as follows:
+
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page1.jpg?raw=true)
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page2.jpg?raw=true)
 ![alt text](https://github.com/fncokg/pandoc-tex-numbering/blob/main/images/custom-page3.jpg?raw=true)

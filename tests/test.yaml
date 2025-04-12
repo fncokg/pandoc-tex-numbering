@@ -2,6 +2,8 @@
 number-reset-level: 2
 theorem-names: "thm,lem"
 appendix-names: "Appendix"
+section-offset-2: 5
+figure-offset: 3
 
 # Prefix Settings
 figure-prefix: Fig
