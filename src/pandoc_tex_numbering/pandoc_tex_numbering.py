@@ -380,6 +380,12 @@ def find_labels_header(elem,doc):
     if this_level == 1:
         header_txt = to_string(elem)
         doc.num_state.isin_apx = header_txt in doc.settings["apx_names"]
+    
+    # Skip numbering if level exceeds max_levels
+    if this_level > doc.num_state.max_levels:
+        logger.info(f"Skipping numbering for section level {this_level} (exceeds max_levels={doc.num_state.max_levels})")
+        return
+        
     doc.num_state.next_sec(level=this_level)
     num_obj = doc.num_state.current_sec(level=this_level)
     for child in elem.content:
