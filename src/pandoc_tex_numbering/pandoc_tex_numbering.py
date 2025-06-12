@@ -382,8 +382,9 @@ def find_labels_header(elem,doc):
         doc.num_state.isin_apx = header_txt in doc.settings["apx_names"]
     
     # Skip numbering if level exceeds max_levels
-    if this_level > doc.num_state.max_levels:
-        logger.info(f"Skipping numbering for section level {this_level} (exceeds max_levels={doc.num_state.max_levels})")
+    max_levels = int(doc.get_metadata("section-max-levels", 10))
+    if this_level > max_levels:
+        logger.info(f"Skipping numbering for section level {this_level} (exceeds max_levels={max_levels})")
         return
         
     doc.num_state.next_sec(level=this_level)
@@ -395,7 +396,6 @@ def find_labels_header(elem,doc):
     if doc.settings["num_sec"]:
         elem.content.insert(0,Space())
         elem.content.insert(0,Str(num_obj.src))
-
 def find_labels_math(elem,doc):
     math_str = elem.text
     modified_math_str,labels = parse_latex_math(math_str,doc)
