@@ -384,15 +384,21 @@ def find_labels_header(elem,doc):
     # Skip numbering if level exceeds max_levels
     max_levels = int(doc.get_metadata("section-max-levels", 10))
     if this_level > max_levels:
-        logger.info(f"Skipping numbering for section level {this_level} (exceeds max_levels={max_levels})")
         return
         
     doc.num_state.next_sec(level=this_level)
     num_obj = doc.num_state.current_sec(level=this_level)
+    
+    # Check for identifier
+    if elem.identifier:
+        label = elem.identifier
+        doc.ref_dict[label] = num_obj
+    
+
     for child in elem.content:
         if isinstance(child,Span) and "label" in child.attributes:
             label = child.attributes["label"]
-            doc.ref_dict[label] = num_obj
+            doc.ref_dict[label] = num_obj    
     if doc.settings["num_sec"]:
         elem.content.insert(0,Space())
         elem.content.insert(0,Str(num_obj.src))
