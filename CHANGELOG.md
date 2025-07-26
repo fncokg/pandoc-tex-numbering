@@ -1,3 +1,10 @@
+# 1.3.2 (2025-07-26)
+Support specifying the multiple reference style in the metadata, so that you can get "equation 1, equation 2 and equation 3" instead of "equations 1, 2 and 3" in the multiple references.
+
+Fix some bugs:
+- Fix the bug that files containing levels beyond `max_level` cause crash.
+- Fix the bug that the `\label` command outside the `\section` command is not processed correctly.
+
 # 1.3.1 (2025-04-12)
 Support specifying the numbering offset of any type of numbering.
 

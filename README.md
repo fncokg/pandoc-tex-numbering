@@ -203,6 +203,7 @@ For more details, see the [List of Figures and Tables](#list-of-figures-and-tabl
 - `multiple-ref-separator`: The separator between the multiple references. Default is ", ". For example, if you set it to "; ", the multiple references will be shown as "equations 1; 2; 3 and 4".
 - `multiple-ref-last-separator`: The separator between the last two references. Default is " and ". For example, if you set it to " & ", the multiple references will be shown as "equations 1, 2, 3 & 4".
 - `multiple-ref-to`: The separator between suppressed multiple references. Default is "-". For example, if you set it to " to ", the multiple references will be shown as "equations 1 to 4".
+- `multiple-ref-style`: The style of the multiple references. Default is "simple". Possible values are "full" and "simple". If set to "full", the multiple references will be shown as "equation 1, equation 2, equation 3 and equation 4" instead of "equations 1, 2, 3 and 4" (simple style).
 
 NOTE: in case of setting metadata in a yaml file, the spaces at the beginning and the end of the values are by default stripped. Therefore, if you want to keep the spaces in the yaml metadata file, **you should mannually escape those spaces via double slashes.** For example, if you want set `multiple-ref-last-separator` to `" and "` (spaces appear at the beginning and the end), you should set it as `"\\ and\\ "` in the yaml file. See pandoc's [issue #10539](https://github.com/jgm/pandoc/issues/10539) for more further discussions.
 
