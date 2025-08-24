@@ -61,7 +61,7 @@ def prepare(doc):
         "num_theorem": doc.get_metadata("number-theorems", True),
         # Multiline Equation Settings
         "multiline_envs": doc.get_metadata(
-            "multiline-environments", "cases,align,aligned,gather,multline,flalign"
+            "multiline-environments", "cases,align,aligned,gather,gathered,multline,flalign"
         ).split(","),
         # Multiple Reference Settings
         "multiple_ref_suppress": doc.get_metadata("multiple-ref-suppress", True),
