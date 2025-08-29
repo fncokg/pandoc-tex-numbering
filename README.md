@@ -23,7 +23,9 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
   - [List of Figures and Tables](#list-of-figures-and-tables)
   - [Multiple References](#multiple-references)
   - [Appendix](#appendix)
-  - [List of Figures and Tables](#list-of-figures-and-tables-1)
+- [Details](#details)
+  - [Equations Details](#equations-details)
+  - [List of Figures and Tables Details](#list-of-figures-and-tables-details)
   - [Data Export](#data-export)
   - [Log](#log)
   - [`org` file support](#org-file-support)
@@ -36,6 +38,8 @@ This is an all-in-one pandoc filter for converting your LaTeX files to any forma
   - [Advanced docx Support](#advanced-docx-support)
 - [FAQ](#faq)
 - [TODO](#todo)
+
+
 
 # What do we support?
 - **Multi-line Equations**: Multi-line equations in LaTeX math block such as `align`, `cases` can be numbered line by line. `\nonumber` commands are supported to turn off the numbering of a specific line.
@@ -181,7 +185,7 @@ For more non-arabic number support, see the [Custom Non-Arabic Numbers Support](
 For more examples, see also the [Customized Metadata Examples](#customized-metadata).
 
 ## Equations
-- `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,multline,flalign". The equations under these environments will be numbered line by line.
+- `multiline-environments`: Possible multiline environment names separated by commas. Default is "cases,align,aligned,gather,gathered,multline,flalign". The equations under these environments will be numbered line by line.
 
 ## Theorems
 - `theorem-names`: The names of the theorems separated by commas. Default is "". For example, if you have `\newtheorem{thm}{Theorem}` and `\newtheorem{lem}{Lemma}`, you should set the metadata `theorem-names` to "thm,lem".
@@ -209,22 +213,28 @@ NOTE: in case of setting metadata in a yaml file, the spaces at the beginning an
 
 ## Appendix
 - `appendix-names`: The names of the appendices separated by "/,". If you have this in your tex file:
-  ```latex
-    \appendix
-    \chapter{First Appendix}
-    \chapter{Second Appendix}
+    ```latex
+        \appendix
+        \chapter{First Appendix}
+        \chapter{Second Appendix}
     ```
-    You should set the metadata `appendix-names` to `"First Appendix/,Second Appendix"`. Note that the names should be separated by `"/,"`, not by `","` (so as to avoid conflicts with the commas in the names).
+
+You should set the metadata `appendix-names` to `"First Appendix/,Second Appendix"`. Note that the names should be separated by `"/,"`, not by `","` (so as to avoid conflicts with the commas in the names).
 
 # Details
 
-## Equations
+## Equations Details
 
 If metadata `number-equations` is set to `true`, all the equations will be numbered. The numbers are added at the end of the equations and the references to the equations are replaced by their numbers.
 
-Equations under multiline environments (specified by metadata `multiline-environments` ) such as `align`, `cases` etc. are numbered line by line, and the others are numbered as a whole block.
+Equations under multiline environments (specified by metadata `multiline-environments` ) such as `align`, `cases` etc. are numbered line by line, and the others are numbered as a whole block. In multiline environments, **`\nonumber` commands are supported** to turn off the numbering of a specific line.
 
-That is to say, if you want the filter to number multiline equations line by line, use `align`, `cases` etc. environments directly. If you want the filter to number the whole block as a whole, use `split`, `aligned` etc. environments in the `equation` environment. In multiline environments, **`\nonumber` commands are supported** to turn off the numbering of a specific line.
+However, you should keep in mind this: currently we CANNOT support some environments such as `aligned` and `gathered` very well, because `pandoc` will parse all `align` and `gather` environments into `aligned` and `gathered` environments internally.
+
+Currently, we recommend two approaches to achieve block numbered multiline equations:
+
+1. (mostly recommended) Use `split` environment.
+2. Use `aligned` or `gathered` environments, and `\label` it outside the environment.
 
 For example, as shown in `test_data/test.tex`:
 
@@ -253,7 +263,7 @@ This equation will be numbered line by line, say, (1.2), (1.3) and (1.4), while 
 
 **NOTE: the pandoc filters have no access to the difference of `align` and `align*` environments.** Therefore, you CANNOT turn off the numbering of a specific `align` environment via the `*` mark. If you do want to turn off the numbering of a specific `align` environment, a temporary solution is to manually add `\nonumber` commands to every line of the environment. *This may be fixed by a custom lua reader to keep those information in the future.*
 
-## List of Figures and Tables
+## List of Figures and Tables Details
 
 **Currently, this feature is only available for `docx` output with Python>=3.8.**
 
