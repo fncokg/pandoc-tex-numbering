@@ -1,3 +1,11 @@
+# 1.3.3 (2025-08-31)
+Fix some bugs:
+
+- Fix #19 : multiline equations with `\nonumber` commands are not numbered correctly.
+- Fix #17 : Python<=3.8 compatibility issue caused by type annotations.
+- Fix the bug that the `gather` environment is not numbered correctly (see #18)
+- Explicitly note in documentation that the we do not fully support `aligned` and `gathered` currently.
+
 # 1.3.2 (2025-07-26)
 Support specifying the multiple reference style in the metadata, so that you can get "equation 1, equation 2 and equation 3" instead of "equations 1, 2 and 3" in the multiple references.
 
