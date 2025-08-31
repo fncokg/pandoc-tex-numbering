@@ -317,8 +317,6 @@ def _parse_multiline_environment(root_node, doc):
     labels = {}
     environment_body = ""
     # Multiple equations
-    doc.num_state.next_eq()
-    num_obj = doc.num_state.current_eq()
     label_of_this_line = None
     is_label_this_line = True
     for node in root_node.nodelist:
@@ -333,16 +331,18 @@ def _parse_multiline_environment(root_node, doc):
                 is_label_this_line = False
             if node.macroname == "\\":
                 if is_label_this_line:
+                    doc.num_state.next_eq()
+                    num_obj = doc.num_state.current_eq()
                     environment_body += f"{{{num_obj.src}}}"
                     if label_of_this_line:
                         labels[label_of_this_line] = num_obj
-                    doc.num_state.next_eq()
-                    num_obj = doc.num_state.current_eq()
                 label_of_this_line = None
                 is_label_this_line = True
         environment_body += node.latex_verbatim()
 
     if is_label_this_line:
+        doc.num_state.next_eq()
+        num_obj = doc.num_state.current_eq()
         environment_body += f"{{{num_obj.src}}}"
         if label_of_this_line:
             labels[label_of_this_line] = num_obj
