@@ -89,6 +89,7 @@ You can set the following variables in the metadata of your LaTeX file to custom
 - `section-max-levels`: The maximum level of the section numbering. Default is 10.
 - `data-export-path`: Where to export the filter data. Default is `None`, which means no data will be exported. If set, the data will be exported to the specified path in the JSON format. This is useful for further usage of the filter data in other scripts or filter-debugging.
 - `auto-labelling`: Whether to automatically add identifiers (labels) to figures and tables without labels. Default is `true`. This has no effect on the output appearance but can be useful for cross-referencing in the future (for example, in the `.docx` output this will ensure that all your figures and tables have a unique auto-generated bookmark).
+- `numbering-caption-delimiter`: The delimiter between the numbering label and the caption text. Default is `": "` (a colon followed by a space). You can customize it as you like, for example, set it to `" - "` to use a hyphen as the delimiter.
 
 ## Numbering System
 - `{item_type}-numstyle`: The style of the numbering of figures, tables, equations, sections, theorems, subfigures. For example `figure-numstyle` represents the style of the numbering of figures.
