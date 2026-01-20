@@ -61,7 +61,8 @@ def prepare(doc):
         "num_theorem": doc.get_metadata("number-theorems", True),
         # Multiline Equation Settings
         "multiline_envs": doc.get_metadata(
-            "multiline-environments", "cases,align,aligned,gather,gathered,multline,flalign"
+            "multiline-environments",
+            "cases,align,aligned,gather,gathered,multline,flalign",
         ).split(","),
         # Multiple Reference Settings
         "multiple_ref_suppress": doc.get_metadata("multiple-ref-suppress", True),
@@ -82,6 +83,9 @@ def prepare(doc):
         # Appendix Settings
         "apx_names": doc.get_metadata("appendix-names", "Appendix").split("/,"),
         # Miscellaneous
+        "numbering_caption_delimiter": doc.get_metadata(
+            "numbering-caption-delimiter", ": "
+        ),
         "data_export_path": doc.get_metadata("data-export-path", None),
         "auto_labelling": doc.get_metadata("auto-labelling", True),
     }
@@ -235,6 +239,12 @@ def prepare(doc):
         offsets=offsets,
     )
 
+    num_cap_delim_items = []
+    for string in doc.settings["numbering_caption_delimiter"].split(" "):
+        num_cap_delim_items.append(Str(string))
+        num_cap_delim_items.append(Space())
+    doc.global_vars["num_cap_delim"] = num_cap_delim_items[:-1]  # Remove the last Space
+
     doc.ref_dict = {}
 
 
@@ -385,7 +395,7 @@ def parse_latex_math(math_str: str, doc):
     return _parse_plain_math(math_str, doc)
 
 
-def add_label_to_caption(num_obj, label: str, elem):
+def add_label_to_caption(num_obj, label: str, elem, delim: list):
     url = f"#{label}" if label else ""
     label_items = [
         Link(Str(num_obj.src), url=url),
@@ -399,7 +409,8 @@ def add_label_to_caption(num_obj, label: str, elem):
         has_caption = False
     if has_caption:
         # If there's no caption text, we shouldnot add a colon
-        label_items.extend([Str(":"), Space()])
+        # label_items.extend([Str(":"), Space()])
+        label_items.extend(delim)
     for item in label_items[::-1]:
         elem.caption.content[0].content.insert(0, item)
 
@@ -471,7 +482,7 @@ def find_labels_table(elem, doc):
             label = ""
 
     num_obj.caption = to_string(elem.caption)
-    add_label_to_caption(num_obj, label, elem)
+    add_label_to_caption(num_obj, label, elem, doc.global_vars["num_cap_delim"])
     if label:
         doc.ref_dict[label] = num_obj
 
@@ -499,7 +510,7 @@ def _find_labels_figure(elem, doc, subfigure=False):
 
     num_obj.caption = to_string(elem.caption)
     num_obj.short_caption = to_string(elem.caption.short_caption)
-    add_label_to_caption(num_obj, label, elem)
+    add_label_to_caption(num_obj, label, elem, doc.global_vars["num_cap_delim"])
     if label:
         doc.ref_dict[label] = num_obj
 

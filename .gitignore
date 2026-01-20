@@ -9,3 +9,5 @@ tests/test.json
 tests/test2.tex
 tests/data.json
 dist/
+uv.lock
+.venv/
