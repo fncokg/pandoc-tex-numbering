@@ -52,6 +52,8 @@ class Formater:
     def __init__(
         self, fmt_presets, item_type, num_style="arabic", prefix=None, pref_space=True
     ):
+        # "cref" must be provided, otherwise, `__call__` may cause infinite recursion
+        assert "cref" in fmt_presets, "fmt_presets must contain 'cref' formatting"
         self.fmt_presets = fmt_presets
         self.item_type = item_type
         self.num_style = num_style
