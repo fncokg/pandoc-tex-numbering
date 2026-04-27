@@ -43,7 +43,7 @@ def arabic2upper_roman(num):
             if num >= b:
                 result += n
                 num -= b
-                continue
+                break
     return result
 
 def arabic2lower_roman(num):
