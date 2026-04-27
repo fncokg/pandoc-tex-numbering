@@ -142,7 +142,8 @@ class Numbering:
             for i in range(min(len(self.nums), len(value.nums))):
                 if self.nums[i] != value.nums[i]:
                     return self.nums[i] > value.nums[i]
-            return len(self.nums) < len(value.nums)
+            # "sec 2.1" > "sec 2"
+            return len(self.nums) > len(value.nums)
 
     def __lt__(self, value):
         return (not self.__gt__(value)) and (not self.__eq__(value))
