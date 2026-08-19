@@ -93,8 +93,6 @@ def prepare(doc):
     doc.global_vars = {
         # Equations with labels will be wrapped with div elements, since pandoc does not support adding identifiers to math blocks directly
         "paras2wrap": {"paras": [], "labels": []},
-        # Tables with labels will be wrapped with div elements, only in case the table is not labelled in the latex source
-        "tabs2wrap": [],
         # We save the links to replace here to avoid searching them in the finalize function
         "links2replace": [],
         "lof_block": None,
@@ -267,15 +265,6 @@ def finalize(doc):
                 logger.warning(
                     f"Failed to add identifier to paragraph because of {e}. Pleas check: \n The paragraph: {para}. Parent of the paragraph: {parent}"
                 )
-
-    # Add labels for tables by wrapping them with div elements. This is necessary because if a table is not labelled in the latex source, pandoc will not generate a div element for it.
-    for tab, label in doc.global_vars["tabs2wrap"]:
-        if label:
-            parent = tab.parent
-            idx = parent.content.index(tab)
-            del parent.content[idx]
-            div = Div(tab, identifier=label)
-            parent.content.insert(idx, div)
 
     for link, items in doc.global_vars["links2replace"]:
         parent = link.parent
@@ -467,19 +456,24 @@ def find_labels_math(elem, doc):
 
 def find_labels_table(elem, doc):
     doc.num_state.next_tab()
-    # The label of a table will be added to a div element wrapping the table, if any. And if there is not, the div element will be not created.
+
     num_obj = doc.num_state.current_tab()
-    if isinstance(elem.parent, Div):
+
+    # In pandoc<3.10, the label of a table is added to a div element wrapping the table, if any. And if there is not, the div element is not created.
+    # In pandoc>=3.10, the label of a table is added to the table element itself.
+    # For more details, check [issue #11604 of pandoc](https://github.com/jgm/pandoc/issues/11604) and [issue #23 of pandoc-tex-numbering](https://github.com/fncokg/pandoc-tex-numbering/issues/23).
+    # Here we check both cases for compatibility.
+    if elem.identifier:
+        label = elem.identifier
+    elif isinstance(elem.parent, Div):
         label = elem.parent.identifier
-        if not label and doc.settings["auto_labelling"]:
-            label = f"tab:{num_obj.ref}"
-            elem.parent.identifier = label
+    elif doc.settings["auto_labelling"]:
+        label = f"tab:{num_obj.ref}"
+        # In pandoc<3.10, tables without a label will not be wrapped with a div element. Therefore, in pandoc-tex-numbering<1.3.4, we wrap the table with a div element to add the label.
+        # However, this seems to be unnecessary both in pandoc>=3.10 and pandoc<3.10, since the identifier of the Table element itself works well in the writer.
+        elem.identifier = label
     else:
-        if doc.settings["auto_labelling"]:
-            label = f"tab:{num_obj.ref}"
-            doc.global_vars["tabs2wrap"].append([elem, label])
-        else:
-            label = ""
+        label = ""
 
     num_obj.caption = to_string(elem.caption)
     add_label_to_caption(num_obj, label, elem, doc.global_vars["num_cap_delim"])
