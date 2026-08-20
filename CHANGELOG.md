@@ -1,3 +1,14 @@
+# 1.3.4 (2026-08-20)
+New features and enhancements:
+- Support `numbering-caption-delimiter` metadata to specify the delimiter between the numbering and the caption. The previous version only supports a default delimiter of `:`, which is not suitable for all users. Also refer to issue #22.
+- Remove the wrapping of the `Table` element with a `Div` element for tables without labels. Refer to [issue #11604 of pandoc](https://github.com/jgm/pandoc/issues/11604).
+
+Fix some bugs:
+
+- Fix #23 : find table labels (identifiers) in the `Table` element first and then (for backward compatibility) in the possible `Div` wrapper. This is due to the behavior change of pandoc 3.10, also refer to [issue #11604 of pandoc](https://github.com/jgm/pandoc/issues/11604).
+- Fix roman numbering logic in `lang_num.py`.
+- Fix possible infinite recursion in `numbering.py` in rare cases.
+
 # 1.3.3 (2025-08-31)
 Fix some bugs:
 
